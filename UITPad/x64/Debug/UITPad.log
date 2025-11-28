@@ -1,0 +1,333 @@
+﻿   Qt/MSBuild: 3.4.1.0
+   Qt: 6.10.1
+  MainWindow.cpp
+  TextEditor.cpp
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xe3 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0xac that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xec that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0xc0 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x16e that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1c7 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x229 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x3d3 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x3ee that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x47c that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x4ef that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x353 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x69d that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xd45 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xd49 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xe90 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x357 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0xe94 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1274 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x138c that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x392 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1405 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x43d that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x145a that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x851 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(1,1): warning C4828: The file contains a character starting at offset 0x14b0 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x899 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0xcac that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0xd0d that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0xeff that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x128d that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1457 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x158f that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x15b0 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x16b5 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x16bf that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1a77 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1b89 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(1,1): warning C4828: The file contains a character starting at offset 0x1cc9 that is illegal in the current source character set (codepage 65001).
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x1fd that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x3f5 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x3f9 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x447 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x44b that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x5ba that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x5ca that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x756 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x7ab that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/TextEditor.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,33): error C2665: 'Document::Document': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(7,1):
+      could be 'Document::Document(Document &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,33):
+          'Document::Document(Document &&)': cannot convert argument 1 from 'TextEditor *' to 'Document &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,34):
+              Reason: cannot convert from 'TextEditor *' to 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(7,1):
+      or       'Document::Document(const Document &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,33):
+          'Document::Document(const Document &)': cannot convert argument 1 from 'TextEditor *' to 'const Document &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,34):
+              Reason: cannot convert from 'TextEditor *' to 'const Document'
+      C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(21,33):
+      while trying to match the argument list '(TextEditor *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(22,10): error C2039: 'setFilename': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(27,52): error C2039: 'getFilename': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(27,10): error C2660: 'TextEditor::documentOpened': function does not take 1 arguments
+      C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(44,10):
+      see declaration of 'TextEditor::documentOpened'
+      C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(27,10):
+      while trying to match the argument list '(int)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(37,27): error C2039: 'getFilepath': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,33): error C2665: 'Document::Document': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(7,1):
+      could be 'Document::Document(Document &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,33):
+          'Document::Document(Document &&)': cannot convert argument 1 from 'TextEditor *' to 'Document &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,34):
+              Reason: cannot convert from 'TextEditor *' to 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(7,1):
+      or       'Document::Document(const Document &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,33):
+          'Document::Document(const Document &)': cannot convert argument 1 from 'TextEditor *' to 'const Document &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,34):
+              Reason: cannot convert from 'TextEditor *' to 'const Document'
+      C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(45,33):
+      while trying to match the argument list '(TextEditor *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(48,14): error C2039: 'open': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(91,27): error C2039: 'save': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(101,27): error C2039: 'isModified': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(156,34): error C2039: 'getFilename': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\TextEditor.cpp(166,34): error C2039: 'isModified': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x1fd that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x3f5 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x3f9 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x447 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x44b that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x5ba that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x5ca that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x756 that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Header Files\TextEditor.h(1,1): warning C4828: The file contains a character starting at offset 0x7ab that is illegal in the current source character set (codepage 65001).
+  (compiling source file 'Source%20Files/MainWindow.cpp')
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,36): error C2665: 'SpellChecker::SpellChecker': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\SpellChecker.h(7,1):
+      could be 'SpellChecker::SpellChecker(SpellChecker &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,36):
+          'SpellChecker::SpellChecker(SpellChecker &&)': cannot convert argument 1 from 'MainWindow *' to 'SpellChecker &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,37):
+              Reason: cannot convert from 'MainWindow *' to 'SpellChecker'
+      C:\Users\vanja\source\repos\UITPad\Header Files\SpellChecker.h(7,1):
+      or       'SpellChecker::SpellChecker(const SpellChecker &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,36):
+          'SpellChecker::SpellChecker(const SpellChecker &)': cannot convert argument 1 from 'MainWindow *' to 'const SpellChecker &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,37):
+              Reason: cannot convert from 'MainWindow *' to 'const SpellChecker'
+      C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(11,36):
+      while trying to match the argument list '(MainWindow *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,34): error C2665: 'AIAssistant::AIAssistant': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\AIAssistant.h(7,1):
+      could be 'AIAssistant::AIAssistant(AIAssistant &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,34):
+          'AIAssistant::AIAssistant(AIAssistant &&)': cannot convert argument 1 from 'MainWindow *' to 'AIAssistant &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,35):
+              Reason: cannot convert from 'MainWindow *' to 'AIAssistant'
+      C:\Users\vanja\source\repos\UITPad\Header Files\AIAssistant.h(7,1):
+      or       'AIAssistant::AIAssistant(const AIAssistant &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,34):
+          'AIAssistant::AIAssistant(const AIAssistant &)': cannot convert argument 1 from 'MainWindow *' to 'const AIAssistant &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,35):
+              Reason: cannot convert from 'MainWindow *' to 'const AIAssistant'
+      C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(12,34):
+      while trying to match the argument list '(MainWindow *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,28): error C2665: 'Settings::Settings': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\Settings.h(7,1):
+      could be 'Settings::Settings(Settings &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,28):
+          'Settings::Settings(Settings &&)': cannot convert argument 1 from 'MainWindow *' to 'Settings &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,29):
+              Reason: cannot convert from 'MainWindow *' to 'Settings'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Settings.h(7,1):
+      or       'Settings::Settings(const Settings &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,28):
+          'Settings::Settings(const Settings &)': cannot convert argument 1 from 'MainWindow *' to 'const Settings &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,29):
+              Reason: cannot convert from 'MainWindow *' to 'const Settings'
+      C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(13,28):
+      while trying to match the argument list '(MainWindow *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(35,14): error C2027: use of undefined type 'QStatusBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(21,7):
+      see declaration of 'QStatusBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(43,30): error C2027: use of undefined type 'QMenuBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(20,7):
+      see declaration of 'QMenuBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(45,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(46,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(47,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(48,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(49,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(50,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(51,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(52,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(53,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(54,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(55,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(58,30): error C2027: use of undefined type 'QMenuBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(20,7):
+      see declaration of 'QMenuBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(59,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(60,5): error C2027: use of undefined type 'QMenu'
+      C:\Qt\6.10.1\msvc2022_64\include\QtGui\qaction.h(23,7):
+      see declaration of 'QMenu'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,65): error C2665: 'CppSyntaxHighlighter::CppSyntaxHighlighter': no overloaded function could convert all the argument types
+      C:\Users\vanja\source\repos\UITPad\Header Files\CppSyntaxHighlighter.h(7,1):
+      could be 'CppSyntaxHighlighter::CppSyntaxHighlighter(CppSyntaxHighlighter &&)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,65):
+          'CppSyntaxHighlighter::CppSyntaxHighlighter(CppSyntaxHighlighter &&)': cannot convert argument 1 from 'QTextDocument *' to 'CppSyntaxHighlighter &&'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,84):
+              Reason: cannot convert from 'QTextDocument *' to 'CppSyntaxHighlighter'
+      C:\Users\vanja\source\repos\UITPad\Header Files\CppSyntaxHighlighter.h(7,1):
+      or       'CppSyntaxHighlighter::CppSyntaxHighlighter(const CppSyntaxHighlighter &)'
+          C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,65):
+          'CppSyntaxHighlighter::CppSyntaxHighlighter(const CppSyntaxHighlighter &)': cannot convert argument 1 from 'QTextDocument *' to 'const CppSyntaxHighlighter &'
+              C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,84):
+              Reason: cannot convert from 'QTextDocument *' to 'const CppSyntaxHighlighter'
+      C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(94,65):
+      while trying to match the argument list '(QTextDocument *)'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(108,14): error C2027: use of undefined type 'QStatusBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(21,7):
+      see declaration of 'QStatusBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(134,14): error C2039: 'setText': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(137,18): error C2027: use of undefined type 'QStatusBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(21,7):
+      see declaration of 'QStatusBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(137,34): error C2001: newline in constant
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(138,5): error C2143: syntax error: missing ')' before '}'
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(138,5): error C2143: syntax error: missing ';' before '}'
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(147,14): error C2039: 'setText': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(151,14): error C2027: use of undefined type 'QStatusBar'
+      C:\Qt\6.10.1\msvc2022_64\include\QtWidgets\qmainwindow.h(21,7):
+      see declaration of 'QStatusBar'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(151,30): error C2001: newline in constant
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(152,1): error C2143: syntax error: missing ')' before '}'
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(152,1): error C2143: syntax error: missing ';' before '}'
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(208,45): error C2039: 'getText': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(219,14): error C2039: 'setText': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
+C:\Users\vanja\source\repos\UITPad\Source Files\MainWindow.cpp(223,18): error C2039: 'isModified': is not a member of 'Document'
+      C:\Users\vanja\source\repos\UITPad\Header Files\Document.h(3,7):
+      see declaration of 'Document'
+  
