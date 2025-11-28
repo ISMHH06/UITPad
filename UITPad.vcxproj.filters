@@ -46,6 +46,9 @@
     <ClInclude Include="Header Files\CppSyntaxHighlighter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Header Files\TextEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources Files\UITPad.ico">
@@ -92,9 +95,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="Header Files\TextEditor.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="Header Files\MainWindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>

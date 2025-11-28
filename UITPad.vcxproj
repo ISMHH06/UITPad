@@ -108,7 +108,7 @@
     <ClInclude Include="Header Files\Settings.h" />
     <ClInclude Include="Header Files\SpellChecker.h" />
     <ClInclude Include="Header Files\CppSyntaxHighlighter.h" />
-    <QtMoc Include="Header Files\TextEditor.h" />
+    <ClInclude Include="Header Files\TextEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources Files\UITPad.ico" />
