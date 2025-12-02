@@ -95,7 +95,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="Header Files\Document.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
     <QtMoc Include="Header Files\MainWindow.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Header Files\TextEditor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
