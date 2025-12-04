@@ -34,9 +34,6 @@
     <ClInclude Include="Header Files\CppSyntaxRules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header Files\Document.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Header Files\Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,9 +41,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Header Files\CppSyntaxHighlighter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Header Files\TextEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
