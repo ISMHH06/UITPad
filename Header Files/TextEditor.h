@@ -1,4 +1,4 @@
-﻿#ifndef TEXTEDITOR_H
+#ifndef TEXTEDITOR_H
 #define TEXTEDITOR_H
 
 #include <QObject>

@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 #include "TextEditor.h"
 #include "Document.h"
 #include "SpellChecker.h"

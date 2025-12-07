@@ -1,4 +1,4 @@
-﻿#ifndef DOCUMENT_H
+#ifndef DOCUMENT_H
 #define DOCUMENT_H
 
 #include <QObject>

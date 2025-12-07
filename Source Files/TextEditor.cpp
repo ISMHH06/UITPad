@@ -1,4 +1,4 @@
-﻿#include "TextEditor.h"
+#include "TextEditor.h"
 #include "Document.h"
 #include <QFile>
 #include <QTextStream>
