@@ -1,53 +1,62 @@
-﻿#ifndef MAINWINDOW_H
+#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
+#include "highlighter.h"
 #include <QMainWindow>
-#include <QPlainTextEdit>
 #include <QTabWidget>
+#include <QPlainTextEdit>
+#include "TextEditor.h"
+#include "Document.h"
+#include "SpellChecker.h"
+#include "Settings.h"  // <--- 1. IMPORTANT : On inclut les paramètres
 
-// Forward declarations
-class TextEditor;
-class Document;
-
-// MainWindow: Fenêtre principale de l'application UITPad
-// Gère l'interface utilisateur et coordonne TextEditor et Document
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-private:
-    QTabWidget* tabWidget;         // Widget d'onglets pour les documents
-    TextEditor* textEditor;        // Gestionnaire de documents (DO NOT REMOVE - required by MOC)
-
-    QPlainTextEdit* getCurrentTextEdit() const;
-    QPlainTextEdit* getTextEditForDocument(Document* doc) const;
-    void updateWindowTitle();
-    void updateTabTitle(Document* doc);
-    void updateTextAreaContent();
-
 public:
-    MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 private slots:
-    // Menu Fichier
+    // --- Gestion des fichiers ---
     void onFileNew();
     void onFileOpen();
     void onFileSave();
     void onFileSaveAs();
     void onFileClose();
-    
-    // Signaux de TextEditor
+
+    // --- Gestion des documents ---
     void onDocumentOpened(Document* doc);
     void onDocumentClosed(Document* doc);
     void onDocumentSaved(Document* doc);
     void onCurrentDocumentChanged(Document* doc);
-    
-    // Gestion des onglets
+
+    // --- Interface ---
+    void onTextChanged();
     void onTabChanged(int index);
     void onTabCloseRequested(int index);
-    
-    // Changements de texte
-    void onTextChanged();
+
+    void showContextMenu(const QPoint& pos);
+
+    // --- 2. NOUVEAU : Slot pour ouvrir les paramètres ---
+    void onOpenSettings();
+
+private:
+    QTabWidget* tabWidget;
+    TextEditor* textEditor;
+    SpellChecker* spellChecker;
+    void onFileRename();
+
+    // --- 3. NOUVEAU : Variable pour savoir si on corrige ou pas ---
+    bool isCorrectionActive = true;
+
+    // Méthodes internes
+    void updateTabTitle(Document* doc);
+    void updateWindowTitle();
+    QPlainTextEdit* getCurrentTextEdit() const;
+    QPlainTextEdit* getTextEditForDocument(Document* doc) const;
+
+    // --- 4. NOUVEAU : Fonction pour appliquer police/couleur ---
+    void applySettings(Settings* s);
 };
 
-#endif
+#endif // MAINWINDOW_H

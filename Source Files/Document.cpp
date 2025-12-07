@@ -57,11 +57,11 @@ bool Document::loadFromFile(const QString& filePath)
     }
 
     QTextStream in(&file);
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     in.setEncoding(QStringConverter::Utf8);  // Support UTF-8 (Qt 6)
-    #else
+#else
     in.setCodec("UTF-8");  // Support UTF-8 (Qt 5)
-    #endif
+#endif
     content = in.readAll();
     file.close();
 
@@ -102,11 +102,11 @@ bool Document::saveToFile(const QString& filePath)
     }
 
     QTextStream out(&file);
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     out.setEncoding(QStringConverter::Utf8);  // Support UTF-8 (Qt 6)
-    #else
+#else
     out.setCodec("UTF-8");  // Support UTF-8 (Qt 5)
-    #endif
+#endif
     out << content;
     file.close();
 

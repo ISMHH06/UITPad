@@ -34,7 +34,7 @@ Document* TextEditor::openDocument(const QString& filePath)
 
     // Créer un nouveau document avec le chemin du fichier
     Document* doc = new Document(filePath);
-    
+
     // Tenter de charger le fichier
     if (!doc->loadFromFile()) {
         delete doc;
@@ -56,7 +56,7 @@ Document* TextEditor::createNewDocument()
 {
     // Créer un nouveau document vide
     Document* doc = new Document();
-    
+
     // Ajouter à la liste
     documents.append(doc);
     currentDocumentIndex = documents.size() - 1;
@@ -89,20 +89,21 @@ bool TextEditor::closeDocument(int index)
     }
 
     Document* doc = documents[index];
-    
+
     // Retirer de la liste
     documents.removeAt(index);
-    
+
     // Mettre à jour l'index courant
     updateCurrentDocumentIndex();
 
     // Émettre le signal avant de supprimer
     emit documentClosed(doc);
-    
+
     // Si c'était le document courant, émettre le changement
     if (currentDocumentIndex >= 0 && currentDocumentIndex < documents.size()) {
         emit currentDocumentChanged(documents[currentDocumentIndex]);
-    } else if (documents.isEmpty()) {
+    }
+    else if (documents.isEmpty()) {
         emit currentDocumentChanged(nullptr);
     }
 
@@ -133,7 +134,7 @@ bool TextEditor::saveDocument(int index)
     }
 
     Document* doc = documents[index];
-    
+
     // Vérifier si le document a un chemin de fichier
     if (!doc->hasFilePath()) {
         // Nouveau fichier, besoin d'un chemin
@@ -250,7 +251,7 @@ int TextEditor::findDocumentIndex(const QString& filePath) const
     if (!fileInfo.exists()) {
         return -1;
     }
-    
+
     QString canonicalPath = fileInfo.canonicalFilePath();
 
     for (int i = 0; i < documents.size(); ++i) {
@@ -292,11 +293,11 @@ void TextEditor::updateCurrentDocumentIndex()
     if (currentDocumentIndex >= documents.size()) {
         currentDocumentIndex = documents.size() - 1;
     }
-    
+
     if (currentDocumentIndex < 0 && !documents.isEmpty()) {
         currentDocumentIndex = 0;
     }
-    
+
     if (documents.isEmpty()) {
         currentDocumentIndex = -1;
     }
