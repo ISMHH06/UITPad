@@ -1,0 +1,8 @@
+﻿<RCC>
+	<qresource prefix="/syntax">
+		<file>syntax/cpp_operators.txt</file>
+		<file>syntax/cpp_keywords.txt</file>
+		<file>syntax/cpp_datatypes.txt</file>
+		<file>syntax/cpp_preprocessors.txt</file>
+	</qresource>
+</RCC>

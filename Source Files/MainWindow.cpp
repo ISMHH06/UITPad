@@ -4,6 +4,8 @@
 #include "SpellChecker.h"
 #include "Settings.h"
 #include "highlighter.h"
+#include "CppSyntaxHighlighter.h"
+#include "CppSyntaxRules.h"  // Pour isCppCode()
 
 #include <QMenuBar>
 #include <QFileDialog>
@@ -14,34 +16,27 @@
 #include <QWidget>
 #include <QDebug>
 #include <QTextCursor>
-
-// --- NOUVEAUX INCLUDES POUR RENOMMER ---
 #include <QInputDialog>
 #include <QFileInfo>
 #include <QDir>
-// ---------------------------------------
+#include <QTimer>
+#include <QStatusBar>
 
 // --- Constructeur ---
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    // 1. Initialisation du correcteur via les ressources
     spellChecker = new SpellChecker(":/dictionary.txt");
-
-    // 2. Gestionnaire de documents
     textEditor = new TextEditor(this);
 
-    // 3. Onglets
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
     tabWidget->setMovable(true);
     setCentralWidget(tabWidget);
 
-    // Connexions Onglets
     connect(tabWidget, &QTabWidget::currentChanged,
         this, &MainWindow::onTabChanged);
     connect(tabWidget, &QTabWidget::tabCloseRequested,
         this, &MainWindow::onTabCloseRequested);
 
-    // Connexions TextEditor
     connect(textEditor, &TextEditor::documentOpened,
         this, &MainWindow::onDocumentOpened);
     connect(textEditor, &TextEditor::documentClosed,
@@ -55,11 +50,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QMenu* fileMenu = menuBar()->addMenu("Fichier");
     fileMenu->addAction("Nouveau", QKeySequence::New, this, &MainWindow::onFileNew);
     fileMenu->addAction("Ouvrir", QKeySequence::Open, this, &MainWindow::onFileOpen);
-
-    // --- AJOUT DE L'OPTION RENOMMER ---
     fileMenu->addAction("Renommer...", this, &MainWindow::onFileRename);
-    // ----------------------------------
-
     fileMenu->addSeparator();
     fileMenu->addAction("Sauvegarder", QKeySequence::Save, this, &MainWindow::onFileSave);
     fileMenu->addAction("Sauvegarder sous...", QKeySequence::SaveAs, this, &MainWindow::onFileSaveAs);
@@ -67,19 +58,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     fileMenu->addAction("Fermer", QKeySequence::Close, this, &MainWindow::onFileClose);
     fileMenu->addAction("Quitter", QKeySequence::Quit, this, &QWidget::close);
 
-    // Menu Édition pour les Paramètres
+    // Menu Édition
     QMenu* editMenu = menuBar()->addMenu("Édition");
     editMenu->addAction("Paramètres...", this, &MainWindow::onOpenSettings);
+
+    // Menu Affichage - MODIFIÉ
+    QMenu* viewMenu = menuBar()->addMenu("Affichage");
+    QAction* syntaxAction = viewMenu->addAction("Détection automatique C++", this, &MainWindow::onToggleSyntaxHighlighting);
+    syntaxAction->setCheckable(true);
+    syntaxAction->setChecked(isSyntaxHighlightingEnabled);
+    syntaxAction->setToolTip("Détecte et colore automatiquement le code C++ dans tous les fichiers");
 
     setWindowTitle("UITPad - Sans titre");
 }
 
-// --- Destructeur ---
 MainWindow::~MainWindow() {
     delete spellChecker;
 }
 
-// --- Gestion Fichiers ---
 void MainWindow::onFileNew() {
     textEditor->createNewDocument();
 }
@@ -92,12 +88,10 @@ void MainWindow::onFileOpen() {
     if (!doc) QMessageBox::warning(this, "Erreur", "Impossible d'ouvrir le fichier.");
 }
 
-// --- NOUVELLE FONCTION : RENOMMER ---
 void MainWindow::onFileRename() {
     Document* doc = textEditor->getCurrentDocument();
     if (!doc) return;
 
-    // Si le fichier n'est pas encore sauvegardé, "Renommer" = "Sauvegarder sous"
     if (!doc->hasFilePath()) {
         onFileSaveAs();
         return;
@@ -107,7 +101,6 @@ void MainWindow::onFileRename() {
     QFileInfo fileInfo(oldPath);
     QString oldName = fileInfo.fileName();
 
-    // Demander le nouveau nom
     bool ok;
     QString newName = QInputDialog::getText(this, "Renommer le fichier",
         "Nouveau nom :", QLineEdit::Normal,
@@ -117,20 +110,17 @@ void MainWindow::onFileRename() {
         QString newPath = fileInfo.absolutePath() + "/" + newName;
         QFile file(oldPath);
 
-        // On essaie de renommer sur le disque
         if (file.rename(newPath)) {
-            // Mise à jour du document et de l'interface
             doc->setFilePath(newPath);
             updateTabTitle(doc);
             updateWindowTitle();
             QMessageBox::information(this, "Succès", "Fichier renommé avec succès.");
         }
         else {
-            QMessageBox::warning(this, "Erreur", "Impossible de renommer le fichier.\n(Vérifiez qu'il n'est pas ouvert ailleurs).");
+            QMessageBox::warning(this, "Erreur", "Impossible de renommer le fichier.");
         }
     }
 }
-// ------------------------------------
 
 void MainWindow::onFileSave() {
     Document* doc = textEditor->getCurrentDocument();
@@ -174,23 +164,33 @@ void MainWindow::onFileClose() {
     textEditor->closeDocument(doc);
 }
 
+// --- FONCTION CLÉE : Détection automatique de code C++ ---
+bool MainWindow::shouldApplySyntaxHighlighting(QPlainTextEdit* textEdit) const {
+    if (!textEdit || !isSyntaxHighlightingEnabled) {
+        return false;
+    }
+
+    QString content = textEdit->toPlainText();
+
+    // Si le texte est vide ou très court, pas de coloration
+    if (content.trimmed().length() < 20) {
+        return false;
+    }
+
+    // Utiliser la détection automatique
+    return CppSyntaxRules::isCppCode(content);
+}
+
 // --- Ouverture Document ---
 void MainWindow::onDocumentOpened(Document* doc) {
     if (doc) {
         QPlainTextEdit* textEdit = new QPlainTextEdit(this);
         textEdit->setPlainText(doc->getContent());
 
-        // Soulignement rouge automatique
-        if (spellChecker) {
-            new Highlighter(textEdit->document(), spellChecker);
-        }
-
-        // Menu contextuel (Clic droit)
         textEdit->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(textEdit, &QPlainTextEdit::customContextMenuRequested,
             this, &MainWindow::showContextMenu);
 
-        // Appliquer la police des paramètres
         Settings s(this);
         textEdit->setFont(s.getEditorFont());
 
@@ -198,22 +198,116 @@ void MainWindow::onDocumentOpened(Document* doc) {
         tabWidget->setCurrentIndex(index);
         textEdit->setProperty("document", QVariant::fromValue(doc));
 
-        connect(textEdit, &QPlainTextEdit::textChanged,
-            this, &MainWindow::onTextChanged);
+        // Connexion pour détecter les changements de texte
+        connect(textEdit, &QPlainTextEdit::textChanged, this, [this, textEdit]() {
+            onTextChanged();
+            // Analyser le contenu après un court délai pour éviter trop de recalculs
+            checkAndApplyHighlighting(textEdit);
+            });
+
+        // Appliquer le highlighter initial
+        applyAppropriateHighlighter(textEdit);
 
         updateTabTitle(doc);
         updateWindowTitle();
     }
 }
 
-// --- Clic Droit Intelligent ---
+// --- NOUVELLE FONCTION : Choisir le bon highlighter selon le contenu ---
+void MainWindow::applyAppropriateHighlighter(QPlainTextEdit* textEdit) {
+    if (!textEdit) return;
+
+    // Supprimer l'ancien highlighter
+    removeAllHighlighters(textEdit);
+
+    // Déterminer quel highlighter appliquer
+    if (shouldApplySyntaxHighlighting(textEdit)) {
+        // Code C++ détecté → Coloration syntaxique
+        CppSyntaxHighlighter* syntaxHighlighter = new CppSyntaxHighlighter(textEdit->document());
+        textEdit->document()->setProperty("highlighter", QVariant::fromValue(static_cast<QObject*>(syntaxHighlighter)));
+        textEdit->setProperty("highlighterType", "cpp");
+    }
+    else if (isCorrectionActive && spellChecker && spellChecker->isValid()) {
+        // Texte normal → Correction orthographique
+        Highlighter* spellHighlighter = new Highlighter(textEdit->document(), spellChecker);
+        textEdit->document()->setProperty("highlighter", QVariant::fromValue(static_cast<QObject*>(spellHighlighter)));
+        textEdit->setProperty("highlighterType", "spell");
+    }
+}
+
+// --- NOUVELLE FONCTION : Vérifier et appliquer avec délai ---
+void MainWindow::checkAndApplyHighlighting(QPlainTextEdit* textEdit) {
+    if (!textEdit) return;
+
+    // Utiliser un timer pour éviter de recalculer à chaque frappe
+    static QTimer* timer = nullptr;
+    if (!timer) {
+        timer = new QTimer(this);
+        timer->setSingleShot(true);
+        timer->setInterval(500); // 500ms de délai
+    }
+
+    // Déconnecter l'ancien signal
+    disconnect(timer, nullptr, nullptr, nullptr);
+
+    // Connecter au nouvel onglet
+    connect(timer, &QTimer::timeout, this, [this, textEdit]() {
+        QString currentType = textEdit->property("highlighterType").toString();
+        bool shouldBeCode = shouldApplySyntaxHighlighting(textEdit);
+
+        // Changer uniquement si nécessaire
+        if ((shouldBeCode && currentType != "cpp") || (!shouldBeCode && currentType == "cpp")) {
+            applyAppropriateHighlighter(textEdit);
+        }
+        });
+
+    timer->start();
+}
+
+// --- NOUVELLE FONCTION : Supprimer tous les highlighters ---
+void MainWindow::removeAllHighlighters(QPlainTextEdit* textEdit) {
+    if (!textEdit) return;
+
+    QTextDocument* doc = textEdit->document();
+    QSyntaxHighlighter* oldHighlighter = qobject_cast<QSyntaxHighlighter*>(
+        doc->property("highlighter").value<QObject*>());
+
+    if (oldHighlighter) {
+        delete oldHighlighter;
+        doc->setProperty("highlighter", QVariant());
+        textEdit->setProperty("highlighterType", "");
+    }
+}
+
+// --- Basculer la détection automatique ---
+void MainWindow::onToggleSyntaxHighlighting() {
+    isSyntaxHighlightingEnabled = !isSyntaxHighlightingEnabled;
+
+    // Réappliquer à tous les onglets
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
+        if (textEdit) {
+            applyAppropriateHighlighter(textEdit);
+        }
+    }
+
+    QString status = isSyntaxHighlightingEnabled
+        ? "La détection automatique de code C++ est activée"
+        : "La détection automatique est désactivée";
+    statusBar()->showMessage(status, 3000);
+}
+
+// --- Clic Droit ---
 void MainWindow::showContextMenu(const QPoint& pos) {
     QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(sender());
     if (!textEdit) return;
 
     QMenu* menu = textEdit->createStandardContextMenu();
 
-    if (isCorrectionActive && spellChecker && spellChecker->isValid()) {
+    // Afficher les suggestions uniquement si pas en mode code
+    if (isCorrectionActive && spellChecker && spellChecker->isValid()
+        && textEdit->property("highlighterType").toString() != "cpp") {
+
         QTextCursor cursor = textEdit->cursorForPosition(pos);
         cursor.select(QTextCursor::WordUnderCursor);
         QString word = cursor.selectedText();
@@ -247,14 +341,11 @@ void MainWindow::showContextMenu(const QPoint& pos) {
     delete menu;
 }
 
-// --- Paramètres ---
 void MainWindow::onOpenSettings() {
     Settings settingsDialog(this);
-
     connect(&settingsDialog, &Settings::settingsChanged, this, [&]() {
         applySettings(&settingsDialog);
         });
-
     settingsDialog.exec();
 }
 
@@ -269,14 +360,13 @@ void MainWindow::applySettings(Settings* s) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
         if (textEdit) {
             textEdit->setFont(font);
-            QString style = QString("QPlainTextEdit { color: %1; background-color: white; selection-background-color: #0078d7; selection-color: white; }")
+            QString style = QString("QPlainTextEdit { color: %1; background-color: white; }")
                 .arg(color.name());
             textEdit->setStyleSheet(style);
         }
     }
 }
 
-// --- Autres fonctions utilitaires ---
 void MainWindow::onDocumentClosed(Document* doc) {
     for (int i = 0; i < tabWidget->count(); ++i) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));

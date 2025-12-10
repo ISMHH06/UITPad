@@ -29,6 +29,13 @@ set(PROJECT_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/Resources Files/resources.qrc"
         "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/highlighter.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/highlighter.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/AIAssistant.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/AIAssistant.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/CppSyntaxHighlighter.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/CppSyntaxHighlighter.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/CppSyntaxRules.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/CppSyntaxRules.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Resources Files/syntax.qrc"
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
