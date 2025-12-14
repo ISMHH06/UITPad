@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-#include "highlighter.h"
-#include "CppSyntaxHighlighter.h"
+
+#include "HybridHighlighter.h"
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QPlainTextEdit>
@@ -38,9 +38,10 @@ private slots:
     void onTabCloseRequested(int index);
     void showContextMenu(const QPoint& pos);
 
-    // Paramètres et coloration
+    // Paramètres et fonctionnalités
     void onOpenSettings();
     void onToggleSyntaxHighlighting();
+    void onToggleSpellCheck();
 
 private:
     QTabWidget* tabWidget;
@@ -48,8 +49,8 @@ private:
     SpellChecker* spellChecker;
 
     // Variables d'état
-    bool isCorrectionActive = true;
-    bool isSyntaxHighlightingEnabled = false;
+    bool isSyntaxHighlightingEnabled = true;  // Activé par défaut
+    bool isSpellCheckEnabled = true;           // Activé par défaut
 
     // Méthodes internes
     void updateTabTitle(Document* doc);
@@ -58,11 +59,10 @@ private:
     QPlainTextEdit* getTextEditForDocument(Document* doc) const;
     void applySettings(Settings* s);
 
-    // Gestion de la coloration automatique
-    bool shouldApplySyntaxHighlighting(QPlainTextEdit* textEdit) const;
-    void applyAppropriateHighlighter(QPlainTextEdit* textEdit);
-    void checkAndApplyHighlighting(QPlainTextEdit* textEdit);
-    void removeAllHighlighters(QPlainTextEdit* textEdit);
+    // Gestion du highlighter hybride
+    void applyHybridHighlighter(QPlainTextEdit* textEdit);
+    void updateHighlighterSettings(QPlainTextEdit* textEdit);
+    HybridHighlighter* getHighlighterForTextEdit(QPlainTextEdit* textEdit) const;
 };
 
-#endif // MAINWINDOW_H
+#endif // MAINWINDOW_Hs
