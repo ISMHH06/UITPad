@@ -21,6 +21,12 @@ public:
     bool isSyntaxHighlightingEnabled() const { return syntaxEnabled; }
     bool isSpellCheckEnabled() const { return spellCheckEnabled; }
 
+    // NOUVEAU : Changer le thème de coloration
+    void setTheme(bool isDarkMode);
+
+    // NOUVEAU : Forcer le mode code (pour .cpp/.h)
+    void setForceCodeMode(bool force);
+
 protected:
     void highlightBlock(const QString& text) override;
 
@@ -30,6 +36,8 @@ private:
 
     bool syntaxEnabled;
     bool spellCheckEnabled;
+    bool isDarkTheme;
+    bool forceCodeMode;  // NOUVEAU : Force le mode code pour les fichiers .cpp/.h
 
     // Formats pour la coloration syntaxique
     QTextCharFormat keywordFormat;

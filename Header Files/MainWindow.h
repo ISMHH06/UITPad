@@ -1,21 +1,16 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "HybridHighlighter.h"
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QPlainTextEdit>
-#include <QLabel> // Pour la barre d'état
-#include <QAction>
+#include "TextEditor.h"
+#include "Document.h"
+#include "SpellChecker.h"
 #include "Settings.h"
 
-// Déclarations anticipées des classes
-class SpellChecker;
-class TextEditor;
-class Document;
-class HybridHighlighter;
-
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
@@ -23,73 +18,60 @@ public:
     ~MainWindow();
 
 private slots:
-    // --- Menu Fichier ---
+    // Gestion des fichiers
     void onFileNew();
     void onFileOpen();
-    void onFileRename();
     void onFileSave();
     void onFileSaveAs();
     void onFileClose();
+    void onFileRename();
 
-    // --- Menu Edition & Affichage ---
-    void onOpenSettings();
-    void onToggleSyntaxHighlighting();
-    void onToggleSpellCheck();
-
-    // --- NOUVEAU : Fonctionnalités d'édition ---
-    void onUndo();
-    void onRedo();
-    void onZoomIn();
-    void onZoomOut();
-    void onGoToLine(); // Aller à la ligne spécifique
-
-    // --- NOUVEAU : Mise à jour de l'interface ---
-    void onCursorPositionChanged(); // Met à jour Ligne/Col en bas
-    void updateUndoRedoState();     // Active/Désactive les boutons grisés
-
-    // --- Gestion des Onglets et Documents ---
-    void onTabChanged(int index);
-    void onTabCloseRequested(int index);
+    // Gestion des documents
     void onDocumentOpened(Document* doc);
     void onDocumentClosed(Document* doc);
     void onDocumentSaved(Document* doc);
     void onCurrentDocumentChanged(Document* doc);
-    void onTextChanged();
 
-    // Menu contextuel (clic droit)
+    // Interface
+    void onTextChanged();
+    void onTabChanged(int index);
+    void onTabCloseRequested(int index);
     void showContextMenu(const QPoint& pos);
 
+    // Paramètres et fonctionnalités
+    void onOpenSettings();
+    void onToggleSyntaxHighlighting();
+    void onToggleSpellCheck();
+
 private:
-    // --- Composants principaux ---
     QTabWidget* tabWidget;
-    SpellChecker* spellChecker;
     TextEditor* textEditor;
+    SpellChecker* spellChecker;
 
-    // --- NOUVEAU : Widget de la barre d'état ---
-    QLabel* statusLabel;
+    // Variables d'état
+    bool isSyntaxHighlightingEnabled = true;  // Activé par défaut
+    bool isSpellCheckEnabled = true;           // Activé par défaut
+    Settings::AppTheme currentTheme = Settings::System;  // NOUVEAU : Stocker le thème actuel
 
-    // --- Actions globales (pour pouvoir les activer/désactiver) ---
-    QAction* actionUndo;
-    QAction* actionRedo;
-
-    // --- États ---
-    bool isSyntaxHighlightingEnabled;
-    bool isSpellCheckEnabled;
-
-    // Variable pour retenir le thème actuel (Correction bug thème)
-    Settings::AppTheme currentTheme;
-
-    // --- Méthodes utilitaires ---
-    void setupToolbar(); // Création de la barre d'outils
+    // Méthodes internes
     void updateTabTitle(Document* doc);
     void updateWindowTitle();
-    void applySettings(Settings* s);
-    void applyHybridHighlighter(QPlainTextEdit* textEdit);
-    void updateHighlighterSettings(QPlainTextEdit* textEdit);
-
     QPlainTextEdit* getCurrentTextEdit() const;
     QPlainTextEdit* getTextEditForDocument(Document* doc) const;
+    void applySettings(Settings* s);
+
+    // Gestion du highlighter hybride
+    void applyHybridHighlighter(QPlainTextEdit* textEdit);
+    void updateHighlighterSettings(QPlainTextEdit* textEdit);
     HybridHighlighter* getHighlighterForTextEdit(QPlainTextEdit* textEdit) const;
+
+    // NOUVEAU : Vérifier si c'est un fichier code (extension .cpp/.h/etc)
+    bool isCodeFile(Document* doc) const;
+
+    // NOUVEAU : Gestion des thèmes
+    void applyThemeToApplication(Settings::AppTheme theme);
+    void applyThemeToTextEdit(QPlainTextEdit* textEdit, Settings::AppTheme theme);
+    void applySystemTheme();
 };
 
 #endif // MAINWINDOW_H

@@ -1,12 +1,17 @@
 #include "Settings.h"
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSettings>
+
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
 
 Settings::Settings(QWidget* parent)
     : QDialog(parent),
     selectedFont("Arial", 12),
     selectedColor(Qt::black),
-    currentTheme(Light)
+    currentTheme(System)  // Par défaut : Mode Système
 {
     setWindowTitle("Paramètres");
     setMinimumWidth(300);
@@ -17,6 +22,7 @@ Settings::Settings(QWidget* parent)
 
     // Configuration du sélecteur de thème
     comboTheme = new QComboBox(this);
+    comboTheme->addItem("Système (Auto)", System);      // NOUVEAU
     comboTheme->addItem("Mode Clair (Light)", Light);
     comboTheme->addItem("Mode Sombre (Dark)", Dark);
     comboTheme->addItem("Mode Hacker (Terminal)", Hacker);
@@ -57,7 +63,26 @@ void Settings::loadDefaults()
 {
     chkEnableSpellChecker->setChecked(true);
     chkUnderlineErrors->setChecked(true);
-    comboTheme->setCurrentIndex(Light);
+    comboTheme->setCurrentIndex(System);  // Par défaut : Système
+}
+
+// --- NOUVEAU : Détecte si Windows est en mode sombre ---
+bool Settings::isSystemDarkMode()
+{
+#ifdef Q_OS_WIN
+    // Lire la clé de registre Windows pour le thème
+    QSettings settings(
+        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        QSettings::NativeFormat
+    );
+
+    // AppsUseLightTheme: 0 = Dark, 1 = Light
+    int value = settings.value("AppsUseLightTheme", 1).toInt();
+    return (value == 0);  // 0 = Dark mode
+#else
+    // Sur Linux/Mac, on peut vérifier différemment ou retourner false par défaut
+    return false;
+#endif
 }
 
 // --- Accesseurs ---
@@ -67,10 +92,9 @@ QFont Settings::getEditorFont() const { return selectedFont; }
 QColor Settings::getEditorColor() const { return selectedColor; }
 Settings::AppTheme Settings::getSelectedTheme() const { return currentTheme; }
 
-// --- NOUVEAU : Setter ---
+// --- Setter ---
 void Settings::setCurrentTheme(AppTheme theme) {
     currentTheme = theme;
-    // Trouve l'index correspondant dans la combobox et le sélectionne
     int index = comboTheme->findData(theme);
     if (index != -1) {
         comboTheme->setCurrentIndex(index);

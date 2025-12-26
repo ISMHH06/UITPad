@@ -6,16 +6,17 @@
 #include "HybridHighlighter.h"
 
 #include <QMenuBar>
-#include <QToolBar>  // Pour la barre d'outils
-#include <QStyle>    // Pour les icônes standard
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QKeySequence>
+#include <QTabWidget>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <QDebug>
 #include <QTextCursor>
 #include <QInputDialog>
 #include <QFileInfo>
+#include <QDir>
 #include <QStatusBar>
 
 // --- Constructeur ---
@@ -23,29 +24,26 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     spellChecker = new SpellChecker(":/dictionary.txt");
     textEditor = new TextEditor(this);
 
-    // Initialisation des états par défaut
-    isSyntaxHighlightingEnabled = true;
-    isSpellCheckEnabled = true;
-
-    // IMPORTANT : Initialiser le thème par défaut pour éviter le bug
-    currentTheme = Settings::Light;
-
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
     tabWidget->setMovable(true);
     setCentralWidget(tabWidget);
 
-    // --- Connexions TabWidget ---
-    connect(tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
-    connect(tabWidget, &QTabWidget::tabCloseRequested, this, &MainWindow::onTabCloseRequested);
+    connect(tabWidget, &QTabWidget::currentChanged,
+        this, &MainWindow::onTabChanged);
+    connect(tabWidget, &QTabWidget::tabCloseRequested,
+        this, &MainWindow::onTabCloseRequested);
 
-    // --- Connexions TextEditor ---
-    connect(textEditor, &TextEditor::documentOpened, this, &MainWindow::onDocumentOpened);
-    connect(textEditor, &TextEditor::documentClosed, this, &MainWindow::onDocumentClosed);
-    connect(textEditor, &TextEditor::documentSaved, this, &MainWindow::onDocumentSaved);
-    connect(textEditor, &TextEditor::currentDocumentChanged, this, &MainWindow::onCurrentDocumentChanged);
+    connect(textEditor, &TextEditor::documentOpened,
+        this, &MainWindow::onDocumentOpened);
+    connect(textEditor, &TextEditor::documentClosed,
+        this, &MainWindow::onDocumentClosed);
+    connect(textEditor, &TextEditor::documentSaved,
+        this, &MainWindow::onDocumentSaved);
+    connect(textEditor, &TextEditor::currentDocumentChanged,
+        this, &MainWindow::onCurrentDocumentChanged);
 
-    // --- Menu Fichier ---
+    // Menu Fichier
     QMenu* fileMenu = menuBar()->addMenu("Fichier");
     fileMenu->addAction("Nouveau", QKeySequence::New, this, &MainWindow::onFileNew);
     fileMenu->addAction("Ouvrir", QKeySequence::Open, this, &MainWindow::onFileOpen);
@@ -57,197 +55,122 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     fileMenu->addAction("Fermer", QKeySequence::Close, this, &MainWindow::onFileClose);
     fileMenu->addAction("Quitter", QKeySequence::Quit, this, &QWidget::close);
 
-    // --- Menu Édition ---
+    // Menu Édition
     QMenu* editMenu = menuBar()->addMenu("Édition");
-
-    // On stocke les actions Undo/Redo pour pouvoir les griser si nécessaire
-    actionUndo = editMenu->addAction("Annuler", QKeySequence::Undo, this, &MainWindow::onUndo);
-    actionRedo = editMenu->addAction("Rétablir", QKeySequence::Redo, this, &MainWindow::onRedo);
-
-    editMenu->addSeparator();
-    editMenu->addAction("Aller à la ligne...", QKeySequence("Ctrl+G"), this, &MainWindow::onGoToLine);
-    editMenu->addSeparator();
     editMenu->addAction("Paramètres...", this, &MainWindow::onOpenSettings);
 
-    // --- Menu Affichage ---
+    // Menu Affichage - Options indépendantes
     QMenu* viewMenu = menuBar()->addMenu("Affichage");
-    viewMenu->addAction("Zoom Avant", QKeySequence::ZoomIn, this, &MainWindow::onZoomIn);
-    viewMenu->addAction("Zoom Arrière", QKeySequence::ZoomOut, this, &MainWindow::onZoomOut);
-    viewMenu->addSeparator();
 
-    QAction* syntaxAction = viewMenu->addAction("Coloration syntaxique C++", this, &MainWindow::onToggleSyntaxHighlighting);
+    QAction* syntaxAction = viewMenu->addAction("Coloration syntaxique C++",
+        this, &MainWindow::onToggleSyntaxHighlighting);
     syntaxAction->setCheckable(true);
     syntaxAction->setChecked(isSyntaxHighlightingEnabled);
+    syntaxAction->setToolTip("Active/désactive la coloration C++ (ligne par ligne)");
 
-    QAction* spellAction = viewMenu->addAction("Correction orthographique", this, &MainWindow::onToggleSpellCheck);
+    QAction* spellAction = viewMenu->addAction("Correction orthographique",
+        this, &MainWindow::onToggleSpellCheck);
     spellAction->setCheckable(true);
     spellAction->setChecked(isSpellCheckEnabled);
-
-    // --- Initialisation Toolbar et Status Bar ---
-    setupToolbar();
-
-    // Création du label pour "Ligne : X, Col : Y"
-    statusLabel = new QLabel("Ligne : 1, Col : 1", this);
-    statusLabel->setStyleSheet("padding-right: 15px;");
-    statusBar()->addPermanentWidget(statusLabel);
+    spellAction->setToolTip("Active/désactive la correction orthographique sur les lignes de texte");
 
     setWindowTitle("UITPad - Sans titre");
-    resize(900, 650);
+
+    // NOUVEAU : Appliquer le thème système au démarrage
+    applySystemTheme();
+
+    resize(800, 600);
 }
 
 MainWindow::~MainWindow() {
     delete spellChecker;
 }
 
-// --- NOUVEAU : Configuration de la barre d'outils ---
-void MainWindow::setupToolbar() {
-    QToolBar* toolbar = addToolBar("Barre d'outils principale");
-    toolbar->setMovable(false); // Figer la barre
-
-    // Utilisation des icônes standard de Qt
-    toolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), "Nouveau", this, &MainWindow::onFileNew);
-    toolbar->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), "Ouvrir", this, &MainWindow::onFileOpen);
-    toolbar->addAction(style()->standardIcon(QStyle::SP_DriveFDIcon), "Sauvegarder", this, &MainWindow::onFileSave);
-
-    toolbar->addSeparator();
-
-    toolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), "Annuler", this, &MainWindow::onUndo);
-    toolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), "Rétablir", this, &MainWindow::onRedo);
-
-    toolbar->addSeparator();
-
-    // Boutons de Zoom
-    toolbar->addAction(style()->standardIcon(QStyle::SP_ArrowUp), "Zoom In", this, &MainWindow::onZoomIn);
-    toolbar->addAction(style()->standardIcon(QStyle::SP_ArrowDown), "Zoom Out", this, &MainWindow::onZoomOut);
+void MainWindow::onFileNew() {
+    textEditor->createNewDocument();
 }
-
-// --- Fichier ---
-
-void MainWindow::onFileNew() { textEditor->createNewDocument(); }
 
 void MainWindow::onFileOpen() {
     QString filename = QFileDialog::getOpenFileName(this, "Ouvrir un fichier");
-    if (!filename.isEmpty()) {
-        if (!textEditor->openDocument(filename))
-            QMessageBox::warning(this, "Erreur", "Impossible d'ouvrir le fichier.");
-    }
+    if (filename.isEmpty()) return;
+
+    Document* doc = textEditor->openDocument(filename);
+    if (!doc) QMessageBox::warning(this, "Erreur", "Impossible d'ouvrir le fichier.");
 }
 
 void MainWindow::onFileRename() {
     Document* doc = textEditor->getCurrentDocument();
     if (!doc) return;
-    if (!doc->hasFilePath()) { onFileSaveAs(); return; }
+
+    if (!doc->hasFilePath()) {
+        onFileSaveAs();
+        return;
+    }
 
     QString oldPath = doc->getFilePath();
     QFileInfo fileInfo(oldPath);
     QString oldName = fileInfo.fileName();
+
     bool ok;
-    QString newName = QInputDialog::getText(this, "Renommer", "Nouveau nom :", QLineEdit::Normal, oldName, &ok);
+    QString newName = QInputDialog::getText(this, "Renommer le fichier",
+        "Nouveau nom :", QLineEdit::Normal, oldName, &ok);
 
     if (ok && !newName.isEmpty() && newName != oldName) {
         QString newPath = fileInfo.absolutePath() + "/" + newName;
         QFile file(oldPath);
+
         if (file.rename(newPath)) {
             doc->setFilePath(newPath);
             updateTabTitle(doc);
             updateWindowTitle();
-            QMessageBox::information(this, "Succès", "Fichier renommé.");
-        } else {
-            QMessageBox::warning(this, "Erreur", "Impossible de renommer.");
+            QMessageBox::information(this, "Succès", "Fichier renommé avec succès.");
+        }
+        else {
+            QMessageBox::warning(this, "Erreur", "Impossible de renommer le fichier.");
         }
     }
 }
 
 void MainWindow::onFileSave() {
     Document* doc = textEditor->getCurrentDocument();
-    if (doc) {
-        if (!doc->hasFilePath()) onFileSaveAs();
-        else textEditor->saveDocument(doc);
+    if (!doc) return;
+
+    if (!doc->hasFilePath()) {
+        onFileSaveAs();
+        return;
+    }
+    if (!textEditor->saveDocument(doc)) {
+        QMessageBox::warning(this, "Erreur", "Impossible de sauvegarder.");
     }
 }
 
 void MainWindow::onFileSaveAs() {
     Document* doc = textEditor->getCurrentDocument();
     if (!doc) return;
+
     QString filename = QFileDialog::getSaveFileName(this, "Sauvegarder sous...");
-    if (!filename.isEmpty()) {
-        doc->setFilePath(filename);
-        textEditor->saveDocument(doc);
+    if (filename.isEmpty()) return;
+
+    doc->setFilePath(filename);
+    if (!textEditor->saveDocument(doc)) {
+        QMessageBox::warning(this, "Erreur", "Impossible de sauvegarder.");
     }
 }
 
 void MainWindow::onFileClose() {
     Document* doc = textEditor->getCurrentDocument();
     if (!doc) return;
+
     if (doc->getIsModified()) {
-        auto reply = QMessageBox::question(this, "Modifié", "Sauvegarder ?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        QMessageBox::StandardButton reply = QMessageBox::question(
+            this, "Modifié",
+            "Sauvegarder les modifications ?",
+            QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
         if (reply == QMessageBox::Save) onFileSave();
         else if (reply == QMessageBox::Cancel) return;
     }
     textEditor->closeDocument(doc);
-}
-
-// --- Fonctionnalités d'édition (Undo, Redo, Zoom, Goto) ---
-
-void MainWindow::onUndo() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) editor->undo();
-}
-
-void MainWindow::onRedo() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) editor->redo();
-}
-
-void MainWindow::onZoomIn() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) editor->zoomIn(2);
-}
-
-void MainWindow::onZoomOut() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) editor->zoomOut(2);
-}
-
-void MainWindow::onGoToLine() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (!editor) return;
-
-    bool ok;
-    int maxLine = editor->blockCount();
-    int line = QInputDialog::getInt(this, "Aller à la ligne",
-                                    QString("Numéro de ligne (1-%1) :").arg(maxLine),
-                                    1, 1, maxLine, 1, &ok);
-    if (ok) {
-        QTextCursor cursor = editor->textCursor();
-        cursor.setPosition(0);
-        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line - 1);
-        editor->setTextCursor(cursor);
-        editor->centerCursor();
-    }
-}
-
-void MainWindow::onCursorPositionChanged() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) {
-        QTextCursor cursor = editor->textCursor();
-        int line = cursor.blockNumber() + 1;
-        int col = cursor.columnNumber() + 1;
-        statusLabel->setText(QString("Ligne : %1, Col : %2").arg(line).arg(col));
-
-        updateUndoRedoState();
-    }
-}
-
-void MainWindow::updateUndoRedoState() {
-    QPlainTextEdit* editor = getCurrentTextEdit();
-    if (editor) {
-        actionUndo->setEnabled(editor->document()->isUndoAvailable());
-        actionRedo->setEnabled(editor->document()->isRedoAvailable());
-    } else {
-        actionUndo->setEnabled(false);
-        actionRedo->setEnabled(false);
-    }
 }
 
 // --- Ouverture Document ---
@@ -255,9 +178,10 @@ void MainWindow::onDocumentOpened(Document* doc) {
     if (doc) {
         QPlainTextEdit* textEdit = new QPlainTextEdit(this);
         textEdit->setPlainText(doc->getContent());
-        textEdit->setContextMenuPolicy(Qt::CustomContextMenu);
 
-        connect(textEdit, &QPlainTextEdit::customContextMenuRequested, this, &MainWindow::showContextMenu);
+        textEdit->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(textEdit, &QPlainTextEdit::customContextMenuRequested,
+            this, &MainWindow::showContextMenu);
 
         Settings s(this);
         textEdit->setFont(s.getEditorFont());
@@ -266,41 +190,65 @@ void MainWindow::onDocumentOpened(Document* doc) {
         tabWidget->setCurrentIndex(index);
         textEdit->setProperty("document", QVariant::fromValue(doc));
 
-        // Connexions pour l'interface (Status bar, Undo/Redo)
-        connect(textEdit, &QPlainTextEdit::cursorPositionChanged, this, &MainWindow::onCursorPositionChanged);
-        connect(textEdit, &QPlainTextEdit::undoAvailable, this, &MainWindow::updateUndoRedoState);
-        connect(textEdit, &QPlainTextEdit::redoAvailable, this, &MainWindow::updateUndoRedoState);
-
+        // Appliquer le highlighter hybride
         applyHybridHighlighter(textEdit);
 
-        connect(textEdit, &QPlainTextEdit::textChanged, this, &MainWindow::onTextChanged);
+        connect(textEdit, &QPlainTextEdit::textChanged,
+            this, &MainWindow::onTextChanged);
 
         updateTabTitle(doc);
         updateWindowTitle();
 
-        // Appliquer le thème actuel au nouvel onglet
-        Settings dummySettings(this);
-        dummySettings.setCurrentTheme(currentTheme);
-        onCursorPositionChanged();
+        // NOUVEAU : Appliquer le thème actuel
+        applyThemeToTextEdit(textEdit, currentTheme);
     }
 }
 
-// --- Gestion des surligneurs (Highlighters) ---
-
+// --- NOUVEAU : Appliquer le highlighter hybride ---
 void MainWindow::applyHybridHighlighter(QPlainTextEdit* textEdit) {
     if (!textEdit) return;
+
+    // Créer un highlighter hybride qui gère tout
     HybridHighlighter* highlighter = new HybridHighlighter(textEdit->document(), spellChecker);
+
+    // Configurer selon les préférences actuelles
     highlighter->setSyntaxHighlightingEnabled(isSyntaxHighlightingEnabled);
     highlighter->setSpellCheckEnabled(isSpellCheckEnabled);
+
+    // NOUVEAU : Si c'est un fichier code (.cpp/.h), forcer le mode code
+    Document* doc = textEdit->property("document").value<Document*>();
+    if (doc && isCodeFile(doc)) {
+        highlighter->setForceCodeMode(true);
+    }
+
+    // Sauvegarder pour référence future
     textEdit->setProperty("highlighter", QVariant::fromValue(static_cast<QObject*>(highlighter)));
 }
 
+// NOUVEAU : Vérifier si c'est un fichier code
+bool MainWindow::isCodeFile(Document* doc) const {
+    if (!doc || !doc->hasFilePath()) return false;
+
+    QString filePath = doc->getFilePath();
+    return filePath.endsWith(".cpp") ||
+        filePath.endsWith(".h") ||
+        filePath.endsWith(".hpp") ||
+        filePath.endsWith(".c") ||
+        filePath.endsWith(".cc") ||
+        filePath.endsWith(".cxx") ||
+        filePath.endsWith(".hxx") ||
+        filePath.endsWith(".inl");
+}
+
+// --- NOUVEAU : Obtenir le highlighter d'un textEdit ---
 HybridHighlighter* MainWindow::getHighlighterForTextEdit(QPlainTextEdit* textEdit) const {
     if (!textEdit) return nullptr;
+
     QObject* obj = textEdit->property("highlighter").value<QObject*>();
     return qobject_cast<HybridHighlighter*>(obj);
 }
 
+// --- NOUVEAU : Mettre à jour les paramètres du highlighter ---
 void MainWindow::updateHighlighterSettings(QPlainTextEdit* textEdit) {
     HybridHighlighter* highlighter = getHighlighterForTextEdit(textEdit);
     if (highlighter) {
@@ -309,30 +257,50 @@ void MainWindow::updateHighlighterSettings(QPlainTextEdit* textEdit) {
     }
 }
 
+// --- NOUVEAU : Basculer la coloration syntaxique ---
 void MainWindow::onToggleSyntaxHighlighting() {
     isSyntaxHighlightingEnabled = !isSyntaxHighlightingEnabled;
+
+    // Mettre à jour tous les onglets
     for (int i = 0; i < tabWidget->count(); ++i) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
-        if (textEdit) updateHighlighterSettings(textEdit);
+        if (textEdit) {
+            updateHighlighterSettings(textEdit);
+        }
     }
-    statusBar()->showMessage(isSyntaxHighlightingEnabled ? "Syntaxe : ON" : "Syntaxe : OFF", 2000);
+
+    QString status = isSyntaxHighlightingEnabled
+        ? "Coloration syntaxique activée (ligne par ligne)"
+        : "Coloration syntaxique désactivée";
+    statusBar()->showMessage(status, 3000);
 }
 
+// --- NOUVEAU : Basculer la correction orthographique ---
 void MainWindow::onToggleSpellCheck() {
     isSpellCheckEnabled = !isSpellCheckEnabled;
+
+    // Mettre à jour tous les onglets
     for (int i = 0; i < tabWidget->count(); ++i) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
-        if (textEdit) updateHighlighterSettings(textEdit);
+        if (textEdit) {
+            updateHighlighterSettings(textEdit);
+        }
     }
-    statusBar()->showMessage(isSpellCheckEnabled ? "Ortho : ON" : "Ortho : OFF", 2000);
+
+    QString status = isSpellCheckEnabled
+        ? "Correction orthographique activée (lignes de texte)"
+        : "Correction orthographique désactivée";
+    statusBar()->showMessage(status, 3000);
 }
 
+// --- Clic Droit ---
 void MainWindow::showContextMenu(const QPoint& pos) {
     QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(sender());
     if (!textEdit) return;
 
     QMenu* menu = textEdit->createStandardContextMenu();
 
+    // Afficher les suggestions uniquement si le correcteur est actif
     if (isSpellCheckEnabled && spellChecker && spellChecker->isValid()) {
         QTextCursor cursor = textEdit->cursorForPosition(pos);
         cursor.select(QTextCursor::WordUnderCursor);
@@ -344,10 +312,12 @@ void MainWindow::showContextMenu(const QPoint& pos) {
             title->setEnabled(false);
 
             QStringList suggestions = spellChecker->suggest(word);
+
             if (suggestions.isEmpty()) {
                 QAction* noSugg = menu->addAction("(Aucune suggestion)");
                 noSugg->setEnabled(false);
-            } else {
+            }
+            else {
                 for (const QString& sugg : suggestions) {
                     QAction* action = menu->addAction(sugg);
                     connect(action, &QAction::triggered, this, [textEdit, cursor, sugg]() mutable {
@@ -355,26 +325,21 @@ void MainWindow::showContextMenu(const QPoint& pos) {
                         cursor.beginEditBlock();
                         cursor.insertText(sugg);
                         cursor.endEditBlock();
-                    });
+                        });
                 }
             }
         }
     }
+
     menu->exec(textEdit->mapToGlobal(pos));
     delete menu;
 }
 
-// --- Paramètres (Settings) ---
-
 void MainWindow::onOpenSettings() {
     Settings settingsDialog(this);
-
-    // CORRECTION : On envoie le thème actuel à la fenêtre
-    settingsDialog.setCurrentTheme(currentTheme);
-
     connect(&settingsDialog, &Settings::settingsChanged, this, [&]() {
         applySettings(&settingsDialog);
-    });
+        });
     settingsDialog.exec();
 }
 
@@ -382,83 +347,241 @@ void MainWindow::applySettings(Settings* s) {
     if (!s) return;
 
     QFont font = s->getEditorFont();
-    QColor textColor = s->getEditorColor();
+    QColor color = s->getEditorColor();
+    Settings::AppTheme theme = s->getSelectedTheme();
 
-    // CORRECTION : On sauvegarde le thème choisi
-    currentTheme = s->getSelectedTheme();
-    Settings::AppTheme theme = currentTheme;
-
-    QString backgroundColor;
-    QString globalStyle;
-
-    switch (theme) {
-    case Settings::Dark:
-        backgroundColor = "#1e1e1e";
-        if (textColor == Qt::black) textColor = QColor("#d4d4d4");
-
-        globalStyle = R"(
-            QMainWindow { background-color: #2b2b2b; color: #ffffff; }
-            QTabWidget::pane { border: 1px solid #444444; }
-            QTabBar::tab { background: #3c3c3c; color: #ffffff; padding: 5px; }
-            QTabBar::tab:selected { background: #1e1e1e; font-weight: bold; }
-            QMenuBar { background-color: #2b2b2b; color: #ffffff; }
-            QMenuBar::item:selected { background-color: #3c3c3c; }
-            QMenu { background-color: #2b2b2b; color: #ffffff; }
-            QMenu::item:selected { background-color: #3d3d3d; }
-            QToolBar { background-color: #2b2b2b; border: none; }
-            QToolButton { color: white; }
-            QToolButton:hover { background-color: #3c3c3c; }
-            QStatusBar { color: white; }
-        )";
-        break;
-
-    case Settings::Hacker:
-        backgroundColor = "#000000";
-        if (textColor == Qt::black) textColor = QColor("#00ff00");
-
-        globalStyle = R"(
-            QMainWindow { background-color: #0f0f0f; color: #00ff00; }
-            QTabWidget::pane { border: 1px solid #00ff00; }
-            QTabBar::tab { background: #000000; color: #008800; padding: 5px; }
-            QTabBar::tab:selected { background: #000000; color: #00ff00; border: 1px solid #00ff00; border-bottom: none; }
-            QMenuBar { background-color: #000000; color: #00ff00; }
-            QMenuBar::item:selected { background-color: #003300; }
-            QMenu { background-color: #000000; color: #00ff00; }
-            QMenu::item:selected { background-color: #003300; }
-            QToolBar { background-color: #000000; border-bottom: 1px solid #00ff00; }
-            QToolButton { color: #00ff00; }
-            QToolButton:hover { background-color: #003300; }
-            QStatusBar { color: #00ff00; }
-        )";
-        break;
-
-    case Settings::Light:
-    default:
-        backgroundColor = "white";
-        globalStyle = "";
-        break;
+    // Si mode Système, détecter le thème de Windows
+    if (theme == Settings::System) {
+        bool isDark = Settings::isSystemDarkMode();
+        theme = isDark ? Settings::Dark : Settings::Light;
     }
 
-    this->setStyleSheet(globalStyle);
+    // NOUVEAU : Appliquer le thème à toute l'application
+    applyThemeToApplication(theme);
 
+    // Appliquer le thème à tous les onglets
     for (int i = 0; i < tabWidget->count(); ++i) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
         if (textEdit) {
             textEdit->setFont(font);
 
-            QString selectionColor = (theme == Settings::Hacker) ? "#00aa00" : "#264f78";
-            QString selectionTextColor = "white";
+            // Appliquer le style selon le thème
+            QString styleSheet;
+            if (theme == Settings::Dark) {
+                // Mode Sombre
+                styleSheet = "QPlainTextEdit { "
+                    "color: #D4D4D4; "
+                    "background-color: #1E1E1E; "
+                    "selection-background-color: #264F78; "
+                    "selection-color: white; "
+                    "}";
+            }
+            else if (theme == Settings::Hacker) {
+                // Mode Hacker (Terminal)
+                styleSheet = "QPlainTextEdit { "
+                    "color: #00FF00; "
+                    "background-color: #000000; "
+                    "selection-background-color: #003300; "
+                    "selection-color: #00FF00; "
+                    "font-family: 'Courier New', monospace; "
+                    "}";
+            }
+            else {
+                // Mode Clair (Light)
+                styleSheet = QString("QPlainTextEdit { "
+                    "color: %1; "
+                    "background-color: white; "
+                    "selection-background-color: #0078d7; "
+                    "selection-color: white; "
+                    "}").arg(color.name());
+            }
 
-            QString editorStyle = QString("QPlainTextEdit { color: %1; background-color: %2; "
-                                          "selection-background-color: %3; selection-color: %4; }")
-                                      .arg(textColor.name())
-                                      .arg(backgroundColor)
-                                      .arg(selectionColor)
-                                      .arg(selectionTextColor);
+            textEdit->setStyleSheet(styleSheet);
 
-            textEdit->setStyleSheet(editorStyle);
+            // Mettre à jour le highlighter avec le thème
+            HybridHighlighter* highlighter = getHighlighterForTextEdit(textEdit);
+            if (highlighter) {
+                bool isDark = (theme == Settings::Dark || theme == Settings::Hacker);
+                highlighter->setTheme(isDark);
+            }
         }
     }
+    // NOUVEAU : Sauvegarder
+    currentTheme = theme;
+
+    // Appliquer partout
+    applyThemeToApplication(theme);
+}
+
+// NOUVEAU : Appliquer le thème à toute l'application
+void MainWindow::applyThemeToApplication(Settings::AppTheme theme) {
+    QString appStyleSheet;
+
+    if (theme == Settings::Dark) {
+        // Mode Sombre - Toute l'application
+        appStyleSheet = R"(
+            QMainWindow {
+                background-color: #1E1E1E;
+                color: #D4D4D4;
+            }
+            QMenuBar {
+                background-color: #2D2D30;
+                color: #D4D4D4;
+                border-bottom: 1px solid #3E3E42;
+            }
+            QMenuBar::item:selected {
+                background-color: #3E3E42;
+            }
+            QMenu {
+                background-color: #2D2D30;
+                color: #D4D4D4;
+                border: 1px solid #3E3E42;
+            }
+            QMenu::item:selected {
+                background-color: #094771;
+            }
+            QTabWidget::pane {
+                border: 1px solid #3E3E42;
+                background-color: #252526;
+            }
+            QTabBar::tab {
+                background-color: #2D2D30;
+                color: #D4D4D4;
+                padding: 8px 20px;
+                border: 1px solid #3E3E42;
+            }
+            QTabBar::tab:selected {
+                background-color: #1E1E1E;
+                border-bottom: 2px solid #007ACC;
+            }
+            QTabBar::tab:hover {
+                background-color: #3E3E42;
+            }
+            QStatusBar {
+                background-color: #007ACC;
+                color: white;
+            }
+        )";
+    }
+    else if (theme == Settings::Hacker) {
+        // Mode Hacker - Thème Terminal
+        appStyleSheet = R"(
+            QMainWindow {
+                background-color: #000000;
+                color: #00FF00;
+            }
+            QMenuBar {
+                background-color: #001100;
+                color: #00FF00;
+                border-bottom: 1px solid #00FF00;
+                font-family: 'Courier New', monospace;
+            }
+            QMenuBar::item:selected {
+                background-color: #003300;
+            }
+            QMenu {
+                background-color: #001100;
+                color: #00FF00;
+                border: 1px solid #00FF00;
+                font-family: 'Courier New', monospace;
+            }
+            QMenu::item:selected {
+                background-color: #003300;
+            }
+            QTabWidget::pane {
+                border: 1px solid #00FF00;
+                background-color: #000000;
+            }
+            QTabBar::tab {
+                background-color: #001100;
+                color: #00FF00;
+                padding: 8px 20px;
+                border: 1px solid #00FF00;
+                font-family: 'Courier New', monospace;
+            }
+            QTabBar::tab:selected {
+                background-color: #000000;
+                border-bottom: 2px solid #00FF00;
+            }
+            QTabBar::tab:hover {
+                background-color: #003300;
+            }
+            QStatusBar {
+                background-color: #003300;
+                color: #00FF00;
+                font-family: 'Courier New', monospace;
+            }
+        )";
+    }
+    else {
+        // Mode Clair - Thème par défaut
+        appStyleSheet = R"(
+            QMainWindow {
+                background-color: #F3F3F3;
+                color: #000000;
+            }
+            QMenuBar {
+                background-color: #F0F0F0;
+                color: #000000;
+                border-bottom: 1px solid #CCCCCC;
+            }
+            QMenuBar::item:selected {
+                background-color: #E0E0E0;
+            }
+            QMenu {
+                background-color: #FFFFFF;
+                color: #000000;
+                border: 1px solid #CCCCCC;
+            }
+            QMenu::item:selected {
+                background-color: #0078D7;
+                color: white;
+            }
+            QTabWidget::pane {
+                border: 1px solid #CCCCCC;
+                background-color: #FFFFFF;
+            }
+            QTabBar::tab {
+                background-color: #F0F0F0;
+                color: #000000;
+                padding: 8px 20px;
+                border: 1px solid #CCCCCC;
+            }
+            QTabBar::tab:selected {
+                background-color: #FFFFFF;
+                border-bottom: 2px solid #0078D7;
+            }
+            QTabBar::tab:hover {
+                background-color: #E0E0E0;
+            }
+            QStatusBar {
+                background-color: #0078D7;
+                color: white;
+            }
+        )";
+    }
+
+    // Appliquer le style à toute l'application
+    this->setStyleSheet(appStyleSheet);
+}
+
+// NOUVEAU : Appliquer le thème système au démarrage
+void MainWindow::applySystemTheme() {
+    Settings s(this);
+    Settings::AppTheme theme = s.getSelectedTheme();
+
+    // Détecter si système
+    if (theme == Settings::System) {
+        bool isDark = Settings::isSystemDarkMode();
+        theme = isDark ? Settings::Dark : Settings::Light;
+    }
+
+    // NOUVEAU : Sauvegarder
+    currentTheme = theme;
+
+    // Appliquer
+    applyThemeToApplication(theme);
+    applySettings(&s);
 }
 
 void MainWindow::onDocumentClosed(Document* doc) {
@@ -493,8 +616,6 @@ void MainWindow::onCurrentDocumentChanged(Document* doc) {
                 }
             }
         }
-        // Rafraichir l'état (Barre d'état, boutons Undo/Redo) quand on change d'onglet
-        onCursorPositionChanged();
     }
     updateWindowTitle();
 }
@@ -517,9 +638,6 @@ void MainWindow::onTabChanged(int index) {
         if (textEdit) {
             Document* doc = textEdit->property("document").value<Document*>();
             if (doc) textEditor->switchToDocument(doc);
-
-            // Mise à jour de la status bar
-            onCursorPositionChanged();
         }
     }
 }
@@ -577,4 +695,44 @@ void MainWindow::updateWindowTitle() {
     else {
         setWindowTitle("UITPad - Sans titre");
     }
+}
+
+void MainWindow::applyThemeToTextEdit(
+    QPlainTextEdit* textEdit,
+    Settings::AppTheme theme
+) {
+    QString styleSheet;
+
+    if (theme == Settings::Dark) {
+        // Mode Sombre
+        styleSheet = "QPlainTextEdit { "
+            "color: #D4D4D4; "
+            "background-color: #1E1E1E; "
+            "selection-background-color: #264F78; "
+            "selection-color: white; "
+            "}";
+    }
+    else if (theme == Settings::Hacker) {
+        // Mode Hacker (Terminal)
+        styleSheet = "QPlainTextEdit { "
+            "color: #00FF00; "
+            "background-color: #000000; "
+            "selection-background-color: #003300; "
+            "selection-color: #00FF00; "
+            "font-family: 'Courier New', monospace; "
+            "}";
+    }
+    else {
+        // Mode Clair (Light) - default
+        Settings s(this);
+        QColor color = s.getEditorColor();
+        styleSheet = QString("QPlainTextEdit { "
+            "color: %1; "
+            "background-color: white; "
+            "selection-background-color: #0078d7; "
+            "selection-color: white; "
+            "}").arg(color.name());
+    }
+
+    textEdit->setStyleSheet(styleSheet);
 }

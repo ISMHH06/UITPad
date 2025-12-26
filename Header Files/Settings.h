@@ -15,8 +15,9 @@ class Settings : public QDialog
     Q_OBJECT
 
 public:
-    // --- Enumération pour les thèmes ---
+    // --- Énumération pour les thèmes ---
     enum AppTheme {
+        System,    // NOUVEAU : Détecte automatiquement le thème du système
         Light,
         Dark,
         Hacker
@@ -33,6 +34,9 @@ public:
 
     // --- NOUVEAU : Setter pour définir le thème actuel à l'ouverture ---
     void setCurrentTheme(AppTheme theme);
+
+    // NOUVEAU : Détecte si Windows est en mode sombre
+    static bool isSystemDarkMode();
 
 signals:
     void settingsChanged();

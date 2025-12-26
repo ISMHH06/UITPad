@@ -6,28 +6,35 @@ HybridHighlighter::HybridHighlighter(QTextDocument* parent, SpellChecker* checke
     : QSyntaxHighlighter(parent),
     spellChecker(checker),
     syntaxEnabled(true),
-    spellCheckEnabled(true) {
+    spellCheckEnabled(true),
+    isDarkTheme(true),
+    forceCodeMode(false) {
     setupFormats();
 }
 
 void HybridHighlighter::setupFormats() {
-    // Formats pour la coloration syntaxique
-    keywordFormat.setForeground(QColor(86, 156, 214));
-
-    dataTypeFormat.setForeground(QColor(78, 201, 176));
-
-    preprocessorFormat.setForeground(QColor(155, 155, 155));
-
-    numberFormat.setForeground(QColor(181, 206, 168));
-
-    stringFormat.setForeground(QColor(255, 128, 0));
-
-    commentFormat.setForeground(QColor(87, 166, 74));
-
-    operatorFormat.setForeground(QColor(80, 80, 80));
-
-    // Format pour les fonctions
-    functionFormat.setForeground(QColor(220, 220, 170));
+    if (isDarkTheme) {
+        // === MODE SOMBRE (Dark) - Couleurs actuelles ===
+        keywordFormat.setForeground(QColor(86, 156, 214));        // Bleu clair
+        dataTypeFormat.setForeground(QColor(78, 201, 176));       // Cyan
+        preprocessorFormat.setForeground(QColor(155, 155, 155));  // Gris
+        numberFormat.setForeground(QColor(181, 206, 168));        // Vert clair
+        stringFormat.setForeground(QColor(255, 128, 0));          // Orange
+        commentFormat.setForeground(QColor(87, 166, 74));         // Vert
+        operatorFormat.setForeground(QColor(80, 80, 80));         // Gris foncé
+        functionFormat.setForeground(QColor(220, 220, 170));      // Jaune pâle
+    }
+    else {
+        // === MODE CLAIR (Light) - Couleurs adaptées pour fond blanc ===
+        keywordFormat.setForeground(QColor(0, 0, 255));           // Bleu pur
+        dataTypeFormat.setForeground(QColor(43, 145, 175));       // Cyan foncé
+        preprocessorFormat.setForeground(QColor(128, 128, 128));  // Gris moyen
+        numberFormat.setForeground(QColor(9, 134, 88));           // Vert foncé
+        stringFormat.setForeground(QColor(163, 21, 21));          // Rouge brique
+        commentFormat.setForeground(QColor(0, 128, 0));           // Vert foncé
+        operatorFormat.setForeground(QColor(0, 0, 0));            // Noir
+        functionFormat.setForeground(QColor(121, 94, 38));        // Marron/or
+    }
 
     // Format pour les erreurs d'orthographe (soulignement rouge ondulé)
     spellErrorFormat.setUnderlineColor(Qt::red);
@@ -42,6 +49,19 @@ void HybridHighlighter::setSyntaxHighlightingEnabled(bool enabled) {
 void HybridHighlighter::setSpellCheckEnabled(bool enabled) {
     spellCheckEnabled = enabled;
     rehighlight();
+}
+
+// NOUVEAU : Changer le thème
+void HybridHighlighter::setTheme(bool isDark) {
+    isDarkTheme = isDark;
+    setupFormats();
+    rehighlight();  // Réappliquer la coloration avec les nouvelles couleurs
+}
+
+// NOUVEAU : Forcer le mode code
+void HybridHighlighter::setForceCodeMode(bool force) {
+    forceCodeMode = force;
+    rehighlight();  // Réappliquer la coloration
 }
 
 // ============ DÉTECTION INTELLIGENTE LIGNE PAR LIGNE ============
@@ -149,7 +169,13 @@ void HybridHighlighter::highlightBlock(const QString& text) {
         return;
     }
 
-    // Déterminer si cette ligne est du code ou du texte
+    // Si forceCodeMode est activé (fichiers .cpp/.h), toujours colorer
+    if (forceCodeMode && syntaxEnabled) {
+        highlightCppSyntax(text);
+        return;
+    }
+
+    // Sinon, déterminer si cette ligne est du code ou du texte
     bool isCode = isCodeLine(text);
 
     if (isCode && syntaxEnabled) {
