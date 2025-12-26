@@ -76,6 +76,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     setWindowTitle("UITPad - Sans titre");
 
+    // Initialize currentTheme properly
+    Settings s(this);
+    currentTheme = s.getSelectedTheme();  // Get from settings
+
+    // If system mode, detect actual system theme
+    if (currentTheme == Settings::System) {
+        bool isDark = Settings::isSystemDarkMode();
+        currentTheme = isDark ? Settings::Dark : Settings::Light;
+    }
+
     // NOUVEAU : Appliquer le thème système au démarrage
     applySystemTheme();
 
@@ -200,7 +210,14 @@ void MainWindow::onDocumentOpened(Document* doc) {
         updateWindowTitle();
 
         // NOUVEAU : Appliquer le thème actuel
-        applyThemeToTextEdit(textEdit, currentTheme);
+        applyThemeToTextEdit(textEdit, currentTheme);  // Use currentTheme
+
+        // NOUVEAU : Set theme for highlighter too
+        HybridHighlighter* highlighter = getHighlighterForTextEdit(textEdit);
+        if (highlighter) {
+            bool isDark = (currentTheme == Settings::Dark || currentTheme == Settings::Hacker);
+            highlighter->setTheme(isDark);
+        }
     }
 }
 

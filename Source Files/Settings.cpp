@@ -78,9 +78,14 @@ bool Settings::isSystemDarkMode()
 
     // AppsUseLightTheme: 0 = Dark, 1 = Light
     int value = settings.value("AppsUseLightTheme", 1).toInt();
+
+    // DEBUG: Print the value
+    qDebug() << "Windows theme registry value:" << value << "(0=Dark, 1=Light)";
+
     return (value == 0);  // 0 = Dark mode
 #else
     // Sur Linux/Mac, on peut vérifier différemment ou retourner false par défaut
+    qDebug() << "Not Windows, defaulting to light mode";
     return false;
 #endif
 }
