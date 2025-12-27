@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QSettings>
+#include <QFont>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -11,7 +12,9 @@ Settings::Settings(QWidget* parent)
     : QDialog(parent),
     selectedFont("Arial", 12),
     selectedColor(Qt::black),
-    currentTheme(System)  // Par défaut : Mode Système
+    currentTheme(System),  // Par défaut : Mode Système
+    deepSeekApiKeyValue(""),
+    aiModelValue("nvidia/nemotron-3-nano-30b-a3b:free")
 {
     setWindowTitle("Paramètres");
     setMinimumWidth(300);
@@ -31,6 +34,15 @@ Settings::Settings(QWidget* parent)
     btnColor = new QPushButton("Choisir la couleur du texte", this);
     btnApply = new QPushButton("Appliquer", this);
 
+    editDeepSeekApiKey = new QLineEdit(this);
+    editDeepSeekApiKey->setEchoMode(QLineEdit::Password);
+    editDeepSeekApiKey->setPlaceholderText("OpenRouter API key (Bearer ...)");
+    editDeepSeekApiKey->setToolTip("Clé API OpenRouter. Elle est stockée localement via QSettings.");
+
+    editAiModel = new QLineEdit(this);
+    editAiModel->setPlaceholderText("Model id (e.g. meta-llama/llama-3.1-8b-instruct:free)");
+    editAiModel->setToolTip("OpenRouter model id. You can use a ':free' model if available.");
+
     // --- Mise en page ---
     QVBoxLayout* layout = new QVBoxLayout(this);
 
@@ -39,6 +51,14 @@ Settings::Settings(QWidget* parent)
     layout->addSpacing(5);
     layout->addWidget(btnFont);
     layout->addWidget(btnColor);
+
+    layout->addSpacing(15);
+
+    layout->addWidget(new QLabel("<b>IA :</b>", this));
+    layout->addWidget(new QLabel("OpenRouter API key :", this));
+    layout->addWidget(editDeepSeekApiKey);
+    layout->addWidget(new QLabel("Model :", this));
+    layout->addWidget(editAiModel);
 
     layout->addSpacing(15);
 
@@ -57,13 +77,54 @@ Settings::Settings(QWidget* parent)
     connect(btnApply, &QPushButton::clicked, this, &Settings::onApply);
 
     loadDefaults();
+    loadFromSettings();
 }
 
 void Settings::loadDefaults()
 {
     chkEnableSpellChecker->setChecked(true);
     chkUnderlineErrors->setChecked(true);
-    comboTheme->setCurrentIndex(System);  // Par défaut : Système
+    comboTheme->setCurrentIndex(comboTheme->findData(System));  // Par défaut : Système
+}
+
+void Settings::loadFromSettings()
+{
+    QSettings s;
+
+    // Spell
+    chkEnableSpellChecker->setChecked(s.value("spell/enabled", chkEnableSpellChecker->isChecked()).toBool());
+    chkUnderlineErrors->setChecked(s.value("spell/underlineErrors", chkUnderlineErrors->isChecked()).toBool());
+
+    // UI theme
+    currentTheme = static_cast<AppTheme>(s.value("ui/theme", static_cast<int>(currentTheme)).toInt());
+    int themeIndex = comboTheme->findData(currentTheme);
+    if (themeIndex != -1) {
+        comboTheme->setCurrentIndex(themeIndex);
+    }
+
+    // Font / Color
+    selectedFont = qvariant_cast<QFont>(s.value("ui/font", selectedFont));
+    selectedColor = qvariant_cast<QColor>(s.value("ui/textColor", selectedColor));
+
+    // AI
+    // Migrate old key name ai/deepseekApiKey -> ai/apiKey
+    deepSeekApiKeyValue = s.value("ai/apiKey", s.value("ai/deepseekApiKey", deepSeekApiKeyValue)).toString();
+    editDeepSeekApiKey->setText(deepSeekApiKeyValue);
+
+    aiModelValue = s.value("ai/model", aiModelValue).toString();
+    editAiModel->setText(aiModelValue);
+}
+
+void Settings::saveToSettings() const
+{
+    QSettings s;
+    s.setValue("spell/enabled", chkEnableSpellChecker->isChecked());
+    s.setValue("spell/underlineErrors", chkUnderlineErrors->isChecked());
+    s.setValue("ui/theme", static_cast<int>(currentTheme));
+    s.setValue("ui/font", selectedFont);
+    s.setValue("ui/textColor", selectedColor);
+    s.setValue("ai/apiKey", deepSeekApiKeyValue);
+    s.setValue("ai/model", aiModelValue);
 }
 
 // --- NOUVEAU : Détecte si Windows est en mode sombre ---
@@ -96,6 +157,42 @@ bool Settings::underlineErrors() const { return chkUnderlineErrors->isChecked();
 QFont Settings::getEditorFont() const { return selectedFont; }
 QColor Settings::getEditorColor() const { return selectedColor; }
 Settings::AppTheme Settings::getSelectedTheme() const { return currentTheme; }
+QString Settings::getDeepSeekApiKey() const { return deepSeekApiKeyValue; }
+QString Settings::getAiModel() const { return aiModelValue; }
+
+QString Settings::deepSeekApiKey()
+{
+    QSettings s;
+    return s.value("ai/apiKey", s.value("ai/deepseekApiKey", "")).toString();
+}
+
+void Settings::setDeepSeekApiKey(const QString& apiKey)
+{
+    QSettings s;
+    s.setValue("ai/apiKey", apiKey);
+}
+
+QString Settings::aiModel()
+{
+    QSettings s;
+    const QString fallback = "nvidia/nemotron-3-nano-30b-a3b:free";
+    QString model = s.value("ai/model", fallback).toString().trimmed();
+
+    // Migration: previously suggested free model that often has no endpoints.
+    if (model == "meta-llama/llama-3.1-8b-instruct:free") {
+        model = fallback;
+        s.setValue("ai/model", model);
+    }
+
+    if (model.isEmpty()) model = fallback;
+    return model;
+}
+
+void Settings::setAiModel(const QString& model)
+{
+    QSettings s;
+    s.setValue("ai/model", model);
+}
 
 // --- Setter ---
 void Settings::setCurrentTheme(AppTheme theme) {
@@ -126,6 +223,11 @@ void Settings::onApply()
 {
     // Sauvegarder le thème choisi
     currentTheme = static_cast<AppTheme>(comboTheme->currentData().toInt());
+    deepSeekApiKeyValue = editDeepSeekApiKey->text().trimmed();
+    aiModelValue = editAiModel->text().trimmed();
+    if (aiModelValue.isEmpty()) aiModelValue = "nvidia/nemotron-3-nano-30b-a3b:free";
+
+    saveToSettings();
 
     emit settingsChanged();
     close();

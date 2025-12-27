@@ -10,6 +10,11 @@
 #include "SpellChecker.h"
 #include "Settings.h"
 
+class AIAssistant;
+class QToolButton;
+class QEvent;
+class AIAssistantDock;
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -47,6 +52,8 @@ private:
     QTabWidget* tabWidget;
     TextEditor* textEditor;
     SpellChecker* spellChecker;
+    AIAssistant* aiAssistant = nullptr;
+    AIAssistantDock* aiDock = nullptr;
 
     // Variables d'état
     bool isSyntaxHighlightingEnabled = true;  // Activé par défaut
@@ -72,6 +79,17 @@ private:
     void applyThemeToApplication(Settings::AppTheme theme);
     void applyThemeToTextEdit(QPlainTextEdit* textEdit, Settings::AppTheme theme);
     void applySystemTheme();
+
+    // AI assistant UI
+    void setupAiForTextEdit(QPlainTextEdit* textEdit);
+    void updateAiButtonForTextEdit(QPlainTextEdit* textEdit);
+    QToolButton* ensureAiButton(QPlainTextEdit* textEdit);
+    AIAssistantDock* ensureAiDock();
+    void openAiDockForTextEdit(QPlainTextEdit* textEdit);
+    void updateAiDockSelectionFromTextEdit(QPlainTextEdit* textEdit);
+
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override;
 };
 
 #endif // MAINWINDOW_H

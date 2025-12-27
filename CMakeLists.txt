@@ -7,8 +7,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
 
 # Add include directories so the compiler can find header files
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Header Files")
@@ -31,6 +31,10 @@ set(PROJECT_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/highlighter.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/AIAssistant.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/AIAssistant.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/AIAssistantDialog.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/AIAssistantDialog.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/AIAssistantDock.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/AIAssistantDock.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/HybridHighlighter.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/HybridHighlighter.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/CppSyntaxRules.cpp"
@@ -55,7 +59,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(UITPad PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(UITPad PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
 
 # Configuration MacOS / iOS
 if(${QT_VERSION} VERSION_LESS 6.1.0)
