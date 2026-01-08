@@ -4,6 +4,8 @@
 #include "SpellChecker.h"
 #include "Settings.h"
 #include "HybridHighlighter.h"
+#include "AIAssistant.h"
+#include "AIAssistantDock.h"
 
 #include <QMenuBar>
 #include <QFileDialog>
@@ -18,11 +20,14 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QStatusBar>
+#include <QToolButton>
+#include <QEvent>
 
 // --- Constructeur ---
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     spellChecker = new SpellChecker(":/dictionary.txt");
     textEditor = new TextEditor(this);
+    aiAssistant = new AIAssistant(this);
 
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
@@ -203,6 +208,9 @@ void MainWindow::onDocumentOpened(Document* doc) {
         // Appliquer le highlighter hybride
         applyHybridHighlighter(textEdit);
 
+        // AI assistant overlay button (shows when selection is non-empty)
+        setupAiForTextEdit(textEdit);
+
         connect(textEdit, &QPlainTextEdit::textChanged,
             this, &MainWindow::onTextChanged);
 
@@ -316,6 +324,13 @@ void MainWindow::showContextMenu(const QPoint& pos) {
     if (!textEdit) return;
 
     QMenu* menu = textEdit->createStandardContextMenu();
+
+    // AI action (uses selection if any)
+    menu->addSeparator();
+    QAction* askAiAction = menu->addAction("Ask AI…");
+    connect(askAiAction, &QAction::triggered, this, [this, textEdit]() {
+        openAiDockForTextEdit(textEdit);
+        });
 
     // Afficher les suggestions uniquement si le correcteur est actif
     if (isSpellCheckEnabled && spellChecker && spellChecker->isValid()) {
@@ -752,4 +767,141 @@ void MainWindow::applyThemeToTextEdit(
     }
 
     textEdit->setStyleSheet(styleSheet);
+}
+
+void MainWindow::setupAiForTextEdit(QPlainTextEdit* textEdit)
+{
+    if (!textEdit) return;
+
+    QToolButton* btn = ensureAiButton(textEdit);
+    if (btn) btn->hide();
+
+    connect(textEdit, &QPlainTextEdit::selectionChanged, this, [this, textEdit]() {
+        updateAiButtonForTextEdit(textEdit);
+        updateAiDockSelectionFromTextEdit(textEdit);
+        });
+    connect(textEdit, &QPlainTextEdit::cursorPositionChanged, this, [this, textEdit]() {
+        updateAiButtonForTextEdit(textEdit);
+        updateAiDockSelectionFromTextEdit(textEdit);
+        });
+
+    textEdit->viewport()->installEventFilter(this);
+}
+
+QToolButton* MainWindow::ensureAiButton(QPlainTextEdit* textEdit)
+{
+    if (!textEdit) return nullptr;
+
+    QVariant existing = textEdit->property("aiButton");
+    if (existing.isValid()) {
+        QToolButton* btn = qobject_cast<QToolButton*>(existing.value<QObject*>());
+        if (btn) return btn;
+    }
+
+    QToolButton* btn = new QToolButton(textEdit->viewport());
+    btn->setText("AI");
+    btn->setToolTip("Ask AI about the selected text");
+    btn->setCursor(Qt::PointingHandCursor);
+    btn->setAutoRaise(true);
+    btn->setStyleSheet(
+        "QToolButton {"
+        "  background: #007ACC; color: white; border: 0px;"
+        "  padding: 4px 8px; border-radius: 10px; font-weight: 600;"
+        "}"
+        "QToolButton:hover { background: #1493E6; }"
+    );
+
+    connect(btn, &QToolButton::clicked, this, [this, textEdit]() {
+        openAiDockForTextEdit(textEdit);
+        });
+
+    textEdit->setProperty("aiButton", QVariant::fromValue(static_cast<QObject*>(btn)));
+    return btn;
+}
+
+void MainWindow::updateAiButtonForTextEdit(QPlainTextEdit* textEdit)
+{
+    if (!textEdit) return;
+
+    QToolButton* btn = ensureAiButton(textEdit);
+    if (!btn) return;
+
+    QTextCursor c = textEdit->textCursor();
+    if (!c.hasSelection() || c.selectedText().trimmed().isEmpty()) {
+        btn->hide();
+        return;
+    }
+
+    QTextCursor endCursor = c;
+    endCursor.setPosition(c.selectionEnd());
+    QRect r = textEdit->cursorRect(endCursor);
+
+    QPoint p = r.topRight() + QPoint(8, -btn->sizeHint().height() / 2);
+
+    const QRect vp = textEdit->viewport()->rect();
+    const QSize s = btn->sizeHint();
+
+    int x = qBound(0, p.x(), vp.width() - s.width());
+    int y = qBound(0, p.y(), vp.height() - s.height());
+
+    btn->move(x, y);
+    btn->show();
+    btn->raise();
+}
+
+static QString normalizedQtSelection(QString s)
+{
+    // Qt returns U+2029 for line breaks in selectedText()
+    s.replace(QChar(0x2029), '\n');
+    return s;
+}
+
+AIAssistantDock* MainWindow::ensureAiDock()
+{
+    if (aiDock) return aiDock;
+
+    aiDock = new AIAssistantDock(aiAssistant, this);
+    addDockWidget(Qt::RightDockWidgetArea, aiDock);
+    aiDock->hide();
+    return aiDock;
+}
+
+void MainWindow::updateAiDockSelectionFromTextEdit(QPlainTextEdit* textEdit)
+{
+    if (!aiDock || !aiDock->isVisible()) return;
+    if (!textEdit) return;
+
+    QString selected = normalizedQtSelection(textEdit->textCursor().selectedText());
+    aiDock->setSelectionText(selected);
+}
+
+void MainWindow::openAiDockForTextEdit(QPlainTextEdit* textEdit)
+{
+    if (!textEdit) return;
+
+    AIAssistantDock* dock = ensureAiDock();
+
+    QString selected = normalizedQtSelection(textEdit->textCursor().selectedText());
+    dock->setSelectionText(selected);
+
+    dock->show();
+    dock->raise();
+    dock->setFocus();
+    dock->focusQuestion();
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Resize ||
+        event->type() == QEvent::Wheel ||
+        event->type() == QEvent::MouseMove ||
+        event->type() == QEvent::MouseButtonRelease ||
+        event->type() == QEvent::KeyRelease) {
+        QPlainTextEdit* te = qobject_cast<QPlainTextEdit*>(obj ? obj->parent() : nullptr);
+        if (te) {
+            updateAiButtonForTextEdit(te);
+            updateAiDockSelectionFromTextEdit(te);
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }
