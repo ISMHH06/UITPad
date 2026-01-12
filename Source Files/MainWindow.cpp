@@ -29,6 +29,65 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     textEditor = new TextEditor(this);
     aiAssistant = new AIAssistant(this);
 
+    // In MainWindow::MainWindow constructor, after creating aiAssistant:
+
+    // Initialize compiler manager
+    compilerManager = new CompilerManager(this);
+
+    // Initialize output window
+    outputWindow = new OutputWindow(this);
+    addDockWidget(Qt::BottomDockWidgetArea, outputWindow);
+    outputWindow->hide();
+
+    // Connect compiler signals
+    connect(compilerManager, &CompilerManager::compilationStarted,
+        this, [this](const QString&) {
+            outputWindow->clearCompileOutput();
+            outputWindow->show();
+            outputWindow->showCompileTab();
+        });
+
+    connect(compilerManager, &CompilerManager::compilationOutput,
+        outputWindow, &OutputWindow::appendCompileOutput);
+
+    connect(compilerManager, &CompilerManager::compilationError,
+        outputWindow, &OutputWindow::appendCompileError);
+
+    connect(compilerManager, &CompilerManager::compilationFinished,
+        this, [this](bool success, int) {
+            if (success) {
+                statusBar()->showMessage("Compilation successful", 3000);
+            }
+            else {
+                statusBar()->showMessage("Compilation failed", 3000);
+            }
+        });
+
+    connect(compilerManager, &CompilerManager::executionStarted,
+        this, [this](const QString&) {
+            outputWindow->clearRunOutput();
+            outputWindow->show();
+            outputWindow->showRunTab();
+        });
+
+    connect(compilerManager, &CompilerManager::executionOutput,
+        outputWindow, &OutputWindow::appendRunOutput);
+
+    connect(compilerManager, &CompilerManager::executionError,
+        outputWindow, &OutputWindow::appendRunError);
+
+    connect(compilerManager, &CompilerManager::executionFinished,
+        this, [this](int exitCode) {
+            statusBar()->showMessage(
+                QString("Program finished with exit code %1").arg(exitCode), 3000);
+        });
+
+    connect(outputWindow, &OutputWindow::stopCompilationRequested,
+        compilerManager, &CompilerManager::stopCompilation);
+
+    connect(outputWindow, &OutputWindow::stopExecutionRequested,
+        compilerManager, &CompilerManager::stopExecution);
+
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
     tabWidget->setMovable(true);
@@ -66,6 +125,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     // Menu Affichage - Options indépendantes
     QMenu* viewMenu = menuBar()->addMenu("Affichage");
+
+    // Add Run menu
+    QMenu* runMenu = menuBar()->addMenu("Run");
+    runMenu->addAction("Compile", QKeySequence("F7"), this, &MainWindow::onCompile);
+    runMenu->addAction("Compile and Run", QKeySequence("Ctrl+F5"), this, &MainWindow::onCompileAndRun);
+    runMenu->addAction("Run", QKeySequence("F5"), this, &MainWindow::onRun);
+    runMenu->addSeparator();
+    runMenu->addAction("Stop Compilation", QKeySequence("Shift+F7"), this, &MainWindow::onStopCompilation);
+    runMenu->addAction("Stop Execution", QKeySequence("Shift+F5"), this, &MainWindow::onStopExecution);
+    runMenu->addSeparator();
+    runMenu->addAction("Compiler Settings...", this, &MainWindow::onCompilerSettings);
 
     QAction* syntaxAction = viewMenu->addAction("Coloration syntaxique C++",
         this, &MainWindow::onToggleSyntaxHighlighting);
@@ -375,6 +445,8 @@ void MainWindow::onOpenSettings() {
     settingsDialog.exec();
 }
 
+// In applySettings() method, after applying theme to all text edits, add:
+
 void MainWindow::applySettings(Settings* s) {
     if (!s) return;
 
@@ -382,55 +454,20 @@ void MainWindow::applySettings(Settings* s) {
     QColor color = s->getEditorColor();
     Settings::AppTheme theme = s->getSelectedTheme();
 
-    // Si mode Système, détecter le thème de Windows
     if (theme == Settings::System) {
         bool isDark = Settings::isSystemDarkMode();
         theme = isDark ? Settings::Dark : Settings::Light;
     }
 
-    // NOUVEAU : Appliquer le thème à toute l'application
     applyThemeToApplication(theme);
 
-    // Appliquer le thème à tous les onglets
+    // Apply to all open text editors
     for (int i = 0; i < tabWidget->count(); ++i) {
         QPlainTextEdit* textEdit = qobject_cast<QPlainTextEdit*>(tabWidget->widget(i));
         if (textEdit) {
             textEdit->setFont(font);
+            applyThemeToTextEdit(textEdit, theme);
 
-            // Appliquer le style selon le thème
-            QString styleSheet;
-            if (theme == Settings::Dark) {
-                // Mode Sombre
-                styleSheet = "QPlainTextEdit { "
-                    "color: #D4D4D4; "
-                    "background-color: #1E1E1E; "
-                    "selection-background-color: #264F78; "
-                    "selection-color: white; "
-                    "}";
-            }
-            else if (theme == Settings::Hacker) {
-                // Mode Hacker (Terminal)
-                styleSheet = "QPlainTextEdit { "
-                    "color: #00FF00; "
-                    "background-color: #000000; "
-                    "selection-background-color: #003300; "
-                    "selection-color: #00FF00; "
-                    "font-family: 'Courier New', monospace; "
-                    "}";
-            }
-            else {
-                // Mode Clair (Light)
-                styleSheet = QString("QPlainTextEdit { "
-                    "color: %1; "
-                    "background-color: white; "
-                    "selection-background-color: #0078d7; "
-                    "selection-color: white; "
-                    "}").arg(color.name());
-            }
-
-            textEdit->setStyleSheet(styleSheet);
-
-            // Mettre à jour le highlighter avec le thème
             HybridHighlighter* highlighter = getHighlighterForTextEdit(textEdit);
             if (highlighter) {
                 bool isDark = (theme == Settings::Dark || theme == Settings::Hacker);
@@ -438,11 +475,15 @@ void MainWindow::applySettings(Settings* s) {
             }
         }
     }
-    // NOUVEAU : Sauvegarder
+
     currentTheme = theme;
 
-    // Appliquer partout
     applyThemeToApplication(theme);
+
+    // NEW: Apply theme to output window
+    if (outputWindow) {
+        outputWindow->applyTheme(theme);
+    }
 }
 
 // NOUVEAU : Appliquer le thème à toute l'application
@@ -602,17 +643,20 @@ void MainWindow::applySystemTheme() {
     Settings s(this);
     Settings::AppTheme theme = s.getSelectedTheme();
 
-    // Détecter si système
     if (theme == Settings::System) {
         bool isDark = Settings::isSystemDarkMode();
         theme = isDark ? Settings::Dark : Settings::Light;
     }
 
-    // NOUVEAU : Sauvegarder
     currentTheme = theme;
 
-    // Appliquer
     applyThemeToApplication(theme);
+
+    // NEW: Apply theme to output window
+    if (outputWindow) {
+        outputWindow->applyTheme(theme);
+    }
+
     applySettings(&s);
 }
 
@@ -888,6 +932,100 @@ void MainWindow::openAiDockForTextEdit(QPlainTextEdit* textEdit)
     dock->raise();
     dock->setFocus();
     dock->focusQuestion();
+}
+
+// Add these implementations before the closing brace of MainWindow.cpp
+
+void MainWindow::onCompile()
+{
+    Document* doc = textEditor->getCurrentDocument();
+    if (!doc || !doc->hasFilePath()) {
+        QMessageBox::warning(this, "Compile",
+            "Please save the file before compiling.");
+        return;
+    }
+
+    // Auto-save before compiling
+    if (doc->getIsModified()) {
+        if (!textEditor->saveDocument(doc)) {
+            QMessageBox::warning(this, "Compile",
+                "Failed to save file before compilation.");
+            return;
+        }
+    }
+
+    QString filePath = doc->getFilePath();
+    compilerManager->compileFile(filePath);
+}
+
+void MainWindow::onCompileAndRun()
+{
+    Document* doc = textEditor->getCurrentDocument();
+    if (!doc || !doc->hasFilePath()) {
+        QMessageBox::warning(this, "Compile and Run",
+            "Please save the file before compiling.");
+        return;
+    }
+
+    // Auto-save before compiling
+    if (doc->getIsModified()) {
+        if (!textEditor->saveDocument(doc)) {
+            QMessageBox::warning(this, "Compile and Run",
+                "Failed to save file before compilation.");
+            return;
+        }
+    }
+
+    QString filePath = doc->getFilePath();
+    compilerManager->compileAndRun(filePath);
+}
+
+void MainWindow::onRun()
+{
+    Document* doc = textEditor->getCurrentDocument();
+    if (!doc || !doc->hasFilePath()) {
+        QMessageBox::warning(this, "Run",
+            "Please save the file first.");
+        return;
+    }
+
+    QString sourceFile = doc->getFilePath();
+    QFileInfo fileInfo(sourceFile);
+    QString baseName = fileInfo.completeBaseName();
+    QString dir = fileInfo.absolutePath();
+
+#ifdef Q_OS_WIN
+    QString executable = QDir(dir).filePath(baseName + ".exe");
+#else
+    QString executable = QDir(dir).filePath(baseName);
+#endif
+
+    if (!QFile::exists(executable)) {
+        QMessageBox::warning(this, "Run",
+            "Executable not found. Please compile first.");
+        return;
+    }
+
+    compilerManager->runExecutable(executable);
+}
+
+void MainWindow::onStopCompilation()
+{
+    compilerManager->stopCompilation();
+}
+
+void MainWindow::onStopExecution()
+{
+    compilerManager->stopExecution();
+}
+
+void MainWindow::onCompilerSettings()
+{
+    // TODO: Create a compiler settings dialog
+    QMessageBox::information(this, "Compiler Settings",
+        QString("Current compiler: %1\nPath: %2\n\nC++ Standard: C++17\nOptimization: O0")
+        .arg(compilerManager->getCompilerType() == CompilerManager::GCC ? "GCC/G++" : "Clang")
+        .arg(compilerManager->getCompilerPath()));
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event)

@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include "HybridHighlighter.h"
+#include "CompilerManager.h"
+#include "OutputWindow.h"
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QPlainTextEdit>
@@ -48,12 +50,22 @@ private slots:
     void onToggleSyntaxHighlighting();
     void onToggleSpellCheck();
 
+    // Compiler slots
+    void onCompile();
+    void onCompileAndRun();
+    void onRun();
+    void onStopCompilation();
+    void onStopExecution();
+    void onCompilerSettings();
+
 private:
     QTabWidget* tabWidget;
     TextEditor* textEditor;
     SpellChecker* spellChecker;
     AIAssistant* aiAssistant = nullptr;
     AIAssistantDock* aiDock = nullptr;
+    CompilerManager* compilerManager;
+    OutputWindow* outputWindow;
 
     // Variables d'état
     bool isSyntaxHighlightingEnabled = true;  // Activé par défaut
