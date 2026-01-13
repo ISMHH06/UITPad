@@ -1,147 +1,130 @@
 #include "AIAssistant.h"
-
+#include <QNetworkRequest>
+#include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QJsonObject>
-#include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QUrl>
+#include <QDebug>
 
-AIAssistant::AIAssistant(QObject* parent)
+AIAssistant::AIAssistant(QObject *parent)
     : QObject(parent)
+    , networkManager(new QNetworkAccessManager(this))
+    , settings(new QSettings("CodeMind", "AIAssistant", this))
 {
+    loadSettings();
+    connect(networkManager, &QNetworkAccessManager::finished,
+            this, &AIAssistant::onApiResponse);
 }
 
-QString AIAssistant::buildUserContent(const QString& question, const QString& selectedText)
-{
-    QString content;
-    if (!selectedText.trimmed().isEmpty()) {
-        content += "Selected text (user selection):\n";
-        content += "-----\n";
-        content += selectedText;
-        content += "\n-----\n\n";
-    }
-    content += "User question:\n";
-    content += question;
-    return content;
+AIAssistant::~AIAssistant() {
+    saveSettings();
 }
 
-void AIAssistant::askDeepSeek(
-    const QString& apiKey,
-    const QString& question,
-    const QString& selectedText,
-    const QString& model
-) {
-    const QString trimmedKey = apiKey.trimmed();
-    if (trimmedKey.isEmpty()) {
-        emit requestFailed("Missing DeepSeek API key. Please set it in Settings.");
-        return;
-    }
-    if (question.trimmed().isEmpty()) {
-        emit requestFailed("Please enter a question.");
+void AIAssistant::loadSettings() {
+    apiKey = settings->value("apiKey", "").toString();
+}
+
+void AIAssistant::saveSettings() {
+    settings->setValue("apiKey", apiKey);
+    settings->sync();
+}
+
+void AIAssistant::setApiKey(const QString &key) {
+    apiKey = key.trimmed();
+    saveSettings();
+    emit statusMessage("Clé API configurée");
+}
+
+void AIAssistant::askQuestion(const QString &question) {
+    if (!isConfigured()) {
+        emit errorOccurred("Configurez d'abord votre clé API dans Paramètres → IA");
         return;
     }
 
-    // OpenRouter (OpenAI-compatible)
-    QUrl url("https://openrouter.ai/api/v1/chat/completions");
+    emit statusMessage("Envoi à l'IA...");
 
-    QNetworkRequest req(url);
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    req.setRawHeader("Accept", "application/json");
-    req.setRawHeader("Authorization", QString("Bearer %1").arg(trimmedKey).toUtf8());
-    // Recommended by OpenRouter for attribution/analytics (can be any valid URL/title)
-    req.setRawHeader("HTTP-Referer", "https://uitpad.local");
-    req.setRawHeader("X-Title", "UITPad");
+    QJsonObject request;
+    request["model"] = "gpt-4o-mini";
+    request["temperature"] = 0.2;
+    request["max_tokens"] = 1000;
 
     QJsonArray messages;
-    messages.append(QJsonObject{
-        { "role", "system" },
-        { "content", "You are a helpful assistant. Answer clearly and concisely. If code is involved, provide correct code and brief explanations." }
-        });
-    messages.append(QJsonObject{
-        { "role", "user" },
-        { "content", buildUserContent(question, selectedText) }
-        });
+    QJsonObject systemMsg, userMsg;
 
-    QJsonObject payload{
-        { "model", model },
-        { "messages", messages },
-        { "temperature", 0.2 },
-        { "stream", false }
-    };
+    systemMsg["role"] = "system";
+    systemMsg["content"] = "Tu es CodeMind, assistant de programmation pour le langage c++. Réponds en français, sois concis.";
 
-    QNetworkReply* reply = network.post(req, QJsonDocument(payload).toJson(QJsonDocument::Compact));
+    userMsg["role"] = "user";
+    userMsg["content"] = question;
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        const QByteArray raw = reply->readAll();
-        const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        const QString rawText = QString::fromUtf8(raw).trimmed();
+    messages.append(systemMsg);
+    messages.append(userMsg);
+    request["messages"] = messages;
 
-        // Note: Qt may report HTTP 4xx/5xx either as an errorString or as a normal reply.
-        if (reply->error() != QNetworkReply::NoError) {
-            QString msg = QString("Network error: %1").arg(reply->errorString());
-            if (statusCode > 0) msg += QString(" (HTTP %1)").arg(statusCode);
-            if (!rawText.isEmpty()) msg += QString("\n%1").arg(rawText);
-            emit requestFailed(msg);
-            reply->deleteLater();
-            return;
-        }
+    QNetworkRequest netRequest;
+    netRequest.setUrl(QUrl("https://openrouter.ai/api/v1/chat/completions"));
+    netRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    netRequest.setRawHeader("Authorization", QString("Bearer %1").arg(apiKey).toUtf8());
 
-        if (statusCode >= 400) {
-            QString msg;
-            if (statusCode == 401) {
-                msg = "OpenRouter error: Unauthorized (HTTP 401). Check your API key (Settings → IA).";
-            } else if (statusCode == 402) {
-                msg = "OpenRouter error: Payment required / insufficient credits (HTTP 402). Choose a free model or add credits in OpenRouter.";
-            } else if (statusCode == 429) {
-                msg = "OpenRouter error: Rate limited (HTTP 429). Please wait and try again.";
-            } else {
-                msg = QString("OpenRouter HTTP error: %1").arg(statusCode);
-            }
-            if (!rawText.isEmpty()) msg += QString("\n%1").arg(rawText);
-            emit requestFailed(msg);
-            reply->deleteLater();
-            return;
-        }
-
-        QJsonParseError err{};
-        QJsonDocument doc = QJsonDocument::fromJson(raw, &err);
-        if (err.error != QJsonParseError::NoError || !doc.isObject()) {
-            QString msg = "Failed to parse AI response.";
-            if (!rawText.isEmpty()) msg += QString("\n%1").arg(rawText);
-            emit requestFailed(msg);
-            reply->deleteLater();
-            return;
-        }
-
-        const QJsonObject obj = doc.object();
-        if (obj.contains("error")) {
-            const QJsonObject e = obj.value("error").toObject();
-            const QString msg = e.value("message").toString("Unknown error");
-            emit requestFailed(QString("DeepSeek error: %1").arg(msg));
-            reply->deleteLater();
-            return;
-        }
-
-        const QJsonArray choices = obj.value("choices").toArray();
-        if (choices.isEmpty()) {
-            emit requestFailed("Empty AI response.");
-            reply->deleteLater();
-            return;
-        }
-
-        const QJsonObject firstChoice = choices.at(0).toObject();
-        const QJsonObject message = firstChoice.value("message").toObject();
-        const QString answer = message.value("content").toString().trimmed();
-
-        if (answer.isEmpty()) {
-            emit requestFailed("AI returned an empty answer.");
-            reply->deleteLater();
-            return;
-        }
-
-        emit answerReady(answer);
-        reply->deleteLater();
-        });
+    QJsonDocument doc(request);
+    networkManager->post(netRequest, doc.toJson());
 }
 
+void AIAssistant::explainCode(const QString &code) {
+    QString prompt = QString("Explique ce code de manière concise:\n```\n%1\n```").arg(code);
+    askQuestion(prompt);
+}
+
+void AIAssistant::generateCode(const QString &prompt) {
+    QString fullPrompt = QString("Génère du code pour: %1\nRéponds SEULEMENT avec le code, sans explications.").arg(prompt);
+    askQuestion(fullPrompt);
+}
+
+void AIAssistant::completeCode(const QString &context) {
+    QString prompt = QString("Complète ce code:\n```\n%1\n```\n\nRéponds SEULEMENT avec la suite du code.").arg(context);
+    askQuestion(prompt);
+}
+
+void AIAssistant::onApiResponse(QNetworkReply *reply) {
+    if (reply->error()) {
+        emit errorOccurred("Erreur: " + reply->errorString());
+        reply->deleteLater();
+        return;
+    }
+
+    QByteArray data = reply->readAll();
+    reply->deleteLater();
+
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull()) {
+        emit errorOccurred("Réponse invalide");
+        return;
+    }
+
+    QJsonObject root = doc.object();
+
+    if (root.contains("error")) {
+        QJsonObject error = root["error"].toObject();
+        emit errorOccurred("API: " + error["message"].toString());
+        return;
+    }
+
+    QString response;
+    if (root.contains("choices") && root["choices"].isArray()) {
+        QJsonArray choices = root["choices"].toArray();
+        if (!choices.isEmpty()) {
+            QJsonObject choice = choices[0].toObject();
+            if (choice.contains("message")) {
+                QJsonObject message = choice["message"].toObject();
+                response = message["content"].toString().trimmed();
+            }
+        }
+    }
+
+    if (response.isEmpty()) {
+        emit errorOccurred("Réponse vide");
+        return;
+    }
+
+    emit responseReady(response);
+    emit statusMessage("Réponse reçue");
+}

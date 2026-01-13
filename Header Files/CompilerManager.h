@@ -107,6 +107,16 @@ private:
     bool running;
     bool compileAndRunMode;
     QString pendingExecutable;
+
+    // Temporary file management
+    QString tempSourceFile;
+
+    // Helper methods for non-standard files
+    bool isStandardCppFile(const QString& filePath) const;
+    bool isCodeLine(const QString& line) const;
+    QString extractCodeFromContent(const QString& content) const;
+    QString createTempSourceFile(const QString& originalFile, const QString& content);
+    void cleanupTempFile();
 };
 
 #endif // COMPILERMANAGER_H

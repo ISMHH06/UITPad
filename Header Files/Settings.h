@@ -32,13 +32,6 @@ public:
     QFont getEditorFont() const;
     QColor getEditorColor() const;
     AppTheme getSelectedTheme() const;
-    QString getDeepSeekApiKey() const;
-    QString getAiModel() const;
-
-    static QString deepSeekApiKey();
-    static void setDeepSeekApiKey(const QString& apiKey);
-    static QString aiModel();
-    static void setAiModel(const QString& model);
 
     // --- NOUVEAU : Setter pour définir le thème actuel à l'ouverture ---
     void setCurrentTheme(AppTheme theme);

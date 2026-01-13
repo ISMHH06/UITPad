@@ -5,7 +5,8 @@
 #include "Settings.h"
 #include "HybridHighlighter.h"
 #include "AIAssistant.h"
-#include "AIAssistantDock.h"
+#include "AISettingsDialog.h"
+#include "IAChatWidget.h"
 
 #include <QMenuBar>
 #include <QFileDialog>
@@ -22,14 +23,27 @@
 #include <QStatusBar>
 #include <QToolButton>
 #include <QEvent>
+#include <QApplication>
+#include <QClipboard>
 
-// --- Constructeur ---
+// --- Constructor ---
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     spellChecker = new SpellChecker(":/dictionary.txt");
     textEditor = new TextEditor(this);
-    aiAssistant = new AIAssistant(this);
 
-    // In MainWindow::MainWindow constructor, after creating aiAssistant:
+    // Initialize AI Assistant (NEW)
+    aiAssistant = new AIAssistant(this);
+    if (!aiAssistant) {
+        qCritical() << "ERROR: Cannot create AIAssistant";
+        return;
+    }
+
+    // Initialize AI Chat Widget (NEW)
+    chatWidget = new IAChatWidget(aiAssistant, this);
+    if (!chatWidget) {
+        qCritical() << "ERROR: Cannot create IAChatWidget";
+        return;
+    }
 
     // Initialize compiler manager
     compilerManager = new CompilerManager(this);
@@ -123,10 +137,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QMenu* editMenu = menuBar()->addMenu("Édition");
     editMenu->addAction("Paramètres...", this, &MainWindow::onOpenSettings);
 
-    // Menu Affichage - Options indépendantes
+    // Menu Affichage
     QMenu* viewMenu = menuBar()->addMenu("Affichage");
 
-    // Add Run menu
+    QAction* syntaxAction = viewMenu->addAction("Coloration syntaxique C++",
+        this, &MainWindow::onToggleSyntaxHighlighting);
+    syntaxAction->setCheckable(true);
+    syntaxAction->setChecked(isSyntaxHighlightingEnabled);
+
+    QAction* spellAction = viewMenu->addAction("Correction orthographique",
+        this, &MainWindow::onToggleSpellCheck);
+    spellAction->setCheckable(true);
+    spellAction->setChecked(isSpellCheckEnabled);
+
+    // Menu Run
     QMenu* runMenu = menuBar()->addMenu("Run");
     runMenu->addAction("Compile", QKeySequence("F7"), this, &MainWindow::onCompile);
     runMenu->addAction("Compile and Run", QKeySequence("Ctrl+F5"), this, &MainWindow::onCompileAndRun);
@@ -137,39 +161,64 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     runMenu->addSeparator();
     runMenu->addAction("Compiler Settings...", this, &MainWindow::onCompilerSettings);
 
-    QAction* syntaxAction = viewMenu->addAction("Coloration syntaxique C++",
-        this, &MainWindow::onToggleSyntaxHighlighting);
-    syntaxAction->setCheckable(true);
-    syntaxAction->setChecked(isSyntaxHighlightingEnabled);
-    syntaxAction->setToolTip("Active/désactive la coloration C++ (ligne par ligne)");
+    // Menu AI (NEW from teammate)
+    QMenu* aiMenu = menuBar()->addMenu("AI");
 
-    QAction* spellAction = viewMenu->addAction("Correction orthographique",
-        this, &MainWindow::onToggleSpellCheck);
-    spellAction->setCheckable(true);
-    spellAction->setChecked(isSpellCheckEnabled);
-    spellAction->setToolTip("Active/désactive la correction orthographique sur les lignes de texte");
+    QAction* explainAction = aiMenu->addAction("Expliquer la sélection");
+    explainAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
+    connect(explainAction, &QAction::triggered, this, &MainWindow::onExplainCode);
+
+    QAction* completeAction = aiMenu->addAction("Compléter le code");
+    completeAction->setShortcut(QKeySequence("Ctrl+Shift+Space"));
+    connect(completeAction, &QAction::triggered, this, &MainWindow::onCompleteCode);
+
+    QAction* commentAction = aiMenu->addAction("Générer depuis commentaire");
+    commentAction->setShortcut(QKeySequence("Ctrl+Shift+G"));
+    connect(commentAction, &QAction::triggered, this, &MainWindow::onGenerateFromComment);
+
+    aiMenu->addSeparator();
+
+    QAction* toggleChatAction = aiMenu->addAction("Afficher/Masquer le chat");
+    toggleChatAction->setShortcut(QKeySequence("Ctrl+Shift+C"));
+    connect(toggleChatAction, &QAction::triggered, this, &MainWindow::toggleChatWidget);
+
+    QAction* aiSettingsAction = aiMenu->addAction("Paramètres IA...");
+    connect(aiSettingsAction, &QAction::triggered, this, &MainWindow::onAISettings);
 
     setWindowTitle("UITPad - Sans titre");
 
-    // Initialize currentTheme properly
+    // Initialize theme
     Settings s(this);
-    currentTheme = s.getSelectedTheme();  // Get from settings
-
-    // If system mode, detect actual system theme
+    currentTheme = s.getSelectedTheme();
     if (currentTheme == Settings::System) {
         bool isDark = Settings::isSystemDarkMode();
         currentTheme = isDark ? Settings::Dark : Settings::Light;
     }
-
-    // NOUVEAU : Appliquer le thème système au démarrage
     applySystemTheme();
 
     resize(800, 600);
+
+    // Add AI Chat Widget as dock (NEW)
+    addDockWidget(Qt::RightDockWidgetArea, chatWidget);
+    chatWidget->hide();
+
+    // Connect AI signals (NEW)
+    if (aiAssistant) {
+        connect(aiAssistant, &AIAssistant::errorOccurred, this, &MainWindow::onAIError);
+        connect(chatWidget, &IAChatWidget::codeInsertRequested, this, &MainWindow::onCodeInsertRequested);
+        connect(chatWidget, &IAChatWidget::codeCopyRequested, this, &MainWindow::onCodeCopyRequested);
+        connect(aiAssistant, &AIAssistant::statusMessage, [this](const QString& msg) {
+            statusBar()->showMessage(msg, 3000);
+            });
+    }
+
+    qDebug() << "MainWindow created successfully";
 }
 
 MainWindow::~MainWindow() {
     delete spellChecker;
 }
+
 
 void MainWindow::onFileNew() {
     textEditor->createNewDocument();
@@ -277,9 +326,6 @@ void MainWindow::onDocumentOpened(Document* doc) {
 
         // Appliquer le highlighter hybride
         applyHybridHighlighter(textEdit);
-
-        // AI assistant overlay button (shows when selection is non-empty)
-        setupAiForTextEdit(textEdit);
 
         connect(textEdit, &QPlainTextEdit::textChanged,
             this, &MainWindow::onTextChanged);
@@ -395,13 +441,6 @@ void MainWindow::showContextMenu(const QPoint& pos) {
 
     QMenu* menu = textEdit->createStandardContextMenu();
 
-    // AI action (uses selection if any)
-    menu->addSeparator();
-    QAction* askAiAction = menu->addAction("Ask AI…");
-    connect(askAiAction, &QAction::triggered, this, [this, textEdit]() {
-        openAiDockForTextEdit(textEdit);
-        });
-
     // Afficher les suggestions uniquement si le correcteur est actif
     if (isSpellCheckEnabled && spellChecker && spellChecker->isValid()) {
         QTextCursor cursor = textEdit->cursorForPosition(pos);
@@ -483,6 +522,11 @@ void MainWindow::applySettings(Settings* s) {
     // NEW: Apply theme to output window
     if (outputWindow) {
         outputWindow->applyTheme(theme);
+    }
+
+    // NEW: Apply theme to AI chat widget
+    if (chatWidget) {
+        chatWidget->applyTheme(theme);
     }
 }
 
@@ -657,6 +701,10 @@ void MainWindow::applySystemTheme() {
         outputWindow->applyTheme(theme);
     }
 
+    if (chatWidget) {
+        chatWidget->applyTheme(theme);
+    }
+
     applySettings(&s);
 }
 
@@ -813,128 +861,12 @@ void MainWindow::applyThemeToTextEdit(
     textEdit->setStyleSheet(styleSheet);
 }
 
-void MainWindow::setupAiForTextEdit(QPlainTextEdit* textEdit)
-{
-    if (!textEdit) return;
-
-    QToolButton* btn = ensureAiButton(textEdit);
-    if (btn) btn->hide();
-
-    connect(textEdit, &QPlainTextEdit::selectionChanged, this, [this, textEdit]() {
-        updateAiButtonForTextEdit(textEdit);
-        updateAiDockSelectionFromTextEdit(textEdit);
-        });
-    connect(textEdit, &QPlainTextEdit::cursorPositionChanged, this, [this, textEdit]() {
-        updateAiButtonForTextEdit(textEdit);
-        updateAiDockSelectionFromTextEdit(textEdit);
-        });
-
-    textEdit->viewport()->installEventFilter(this);
-}
-
-QToolButton* MainWindow::ensureAiButton(QPlainTextEdit* textEdit)
-{
-    if (!textEdit) return nullptr;
-
-    QVariant existing = textEdit->property("aiButton");
-    if (existing.isValid()) {
-        QToolButton* btn = qobject_cast<QToolButton*>(existing.value<QObject*>());
-        if (btn) return btn;
-    }
-
-    QToolButton* btn = new QToolButton(textEdit->viewport());
-    btn->setText("AI");
-    btn->setToolTip("Ask AI about the selected text");
-    btn->setCursor(Qt::PointingHandCursor);
-    btn->setAutoRaise(true);
-    btn->setStyleSheet(
-        "QToolButton {"
-        "  background: #007ACC; color: white; border: 0px;"
-        "  padding: 4px 8px; border-radius: 10px; font-weight: 600;"
-        "}"
-        "QToolButton:hover { background: #1493E6; }"
-    );
-
-    connect(btn, &QToolButton::clicked, this, [this, textEdit]() {
-        openAiDockForTextEdit(textEdit);
-        });
-
-    textEdit->setProperty("aiButton", QVariant::fromValue(static_cast<QObject*>(btn)));
-    return btn;
-}
-
-void MainWindow::updateAiButtonForTextEdit(QPlainTextEdit* textEdit)
-{
-    if (!textEdit) return;
-
-    QToolButton* btn = ensureAiButton(textEdit);
-    if (!btn) return;
-
-    QTextCursor c = textEdit->textCursor();
-    if (!c.hasSelection() || c.selectedText().trimmed().isEmpty()) {
-        btn->hide();
-        return;
-    }
-
-    QTextCursor endCursor = c;
-    endCursor.setPosition(c.selectionEnd());
-    QRect r = textEdit->cursorRect(endCursor);
-
-    QPoint p = r.topRight() + QPoint(8, -btn->sizeHint().height() / 2);
-
-    const QRect vp = textEdit->viewport()->rect();
-    const QSize s = btn->sizeHint();
-
-    int x = qBound(0, p.x(), vp.width() - s.width());
-    int y = qBound(0, p.y(), vp.height() - s.height());
-
-    btn->move(x, y);
-    btn->show();
-    btn->raise();
-}
-
 static QString normalizedQtSelection(QString s)
 {
     // Qt returns U+2029 for line breaks in selectedText()
     s.replace(QChar(0x2029), '\n');
     return s;
 }
-
-AIAssistantDock* MainWindow::ensureAiDock()
-{
-    if (aiDock) return aiDock;
-
-    aiDock = new AIAssistantDock(aiAssistant, this);
-    addDockWidget(Qt::RightDockWidgetArea, aiDock);
-    aiDock->hide();
-    return aiDock;
-}
-
-void MainWindow::updateAiDockSelectionFromTextEdit(QPlainTextEdit* textEdit)
-{
-    if (!aiDock || !aiDock->isVisible()) return;
-    if (!textEdit) return;
-
-    QString selected = normalizedQtSelection(textEdit->textCursor().selectedText());
-    aiDock->setSelectionText(selected);
-}
-
-void MainWindow::openAiDockForTextEdit(QPlainTextEdit* textEdit)
-{
-    if (!textEdit) return;
-
-    AIAssistantDock* dock = ensureAiDock();
-
-    QString selected = normalizedQtSelection(textEdit->textCursor().selectedText());
-    dock->setSelectionText(selected);
-
-    dock->show();
-    dock->raise();
-    dock->setFocus();
-    dock->focusQuestion();
-}
-
-// Add these implementations before the closing brace of MainWindow.cpp
 
 void MainWindow::onCompile()
 {
@@ -1028,6 +960,130 @@ void MainWindow::onCompilerSettings()
         .arg(compilerManager->getCompilerPath()));
 }
 
+void MainWindow::onExplainCode() {
+    QPlainTextEdit* editor = getCurrentTextEdit();
+    if (!editor) return;
+
+    QString selectedText = editor->textCursor().selectedText();
+    // Qt uses U+2029 for line breaks in selectedText()
+    selectedText.replace(QChar(0x2029), '\n');
+
+    if (selectedText.isEmpty()) {
+        statusBar()->showMessage("Sélectionnez d'abord du code à expliquer", 3000);
+        return;
+    }
+
+    if (!chatWidget || !aiAssistant) {
+        qCritical() << "AI not initialized";
+        return;
+    }
+
+    chatWidget->show();
+    chatWidget->addMessage("IA", "Analyse du code sélectionné...");
+    aiAssistant->explainCode(selectedText);
+}
+
+void MainWindow::onCompleteCode() {
+    QPlainTextEdit* editor = getCurrentTextEdit();
+    if (!editor) return;
+
+    QTextCursor cursor = editor->textCursor();
+    cursor.select(QTextCursor::LineUnderCursor);
+    QString context = cursor.selectedText();
+
+    if (!chatWidget || !aiAssistant) {
+        qCritical() << "AI not initialized";
+        return;
+    }
+
+    chatWidget->show();
+    chatWidget->addMessage("IA", "Génération de la suite du code...");
+    aiAssistant->completeCode(context);
+}
+
+void MainWindow::onGenerateFromComment() {
+    QPlainTextEdit* editor = getCurrentTextEdit();
+    if (!editor) return;
+
+    QString documentText = editor->toPlainText();
+    QStringList lines = documentText.split("\n");
+    int currentLine = editor->textCursor().blockNumber();
+
+    QString commentPrompt;
+    for (int i = 0; i <= 5; i++) {
+        int lineIndex = currentLine - i;
+        if (lineIndex < 0) break;
+
+        QString line = lines[lineIndex].trimmed();
+        if (line.startsWith("// TODO:") || line.startsWith("// Générer:") ||
+            line.startsWith("# TODO:") || line.startsWith("# Générer:")) {
+            commentPrompt = line.mid(line.indexOf(":") + 1).trimmed();
+            break;
+        }
+    }
+
+    if (commentPrompt.isEmpty()) {
+        statusBar()->showMessage("Placez votre curseur après un commentaire // TODO: ou // Générer:", 3000);
+        return;
+    }
+
+    if (!chatWidget || !aiAssistant) {
+        qCritical() << "AI not initialized";
+        return;
+    }
+
+    chatWidget->show();
+    chatWidget->addMessage("Vous", "// " + commentPrompt);
+    chatWidget->addMessage("IA", "Génération de code à partir du commentaire...");
+    aiAssistant->generateCode(commentPrompt);
+}
+
+void MainWindow::onAISettings() {
+    if (!aiAssistant) {
+        qCritical() << "AIAssistant not initialized";
+        return;
+    }
+
+    if (!aiSettingsDialog) {
+        aiSettingsDialog = new AISettingsDialog(aiAssistant, this);
+    }
+
+    if (aiSettingsDialog->exec() == QDialog::Accepted) {
+        statusBar()->showMessage("Configuration IA sauvegardée", 3000);
+    }
+}
+
+void MainWindow::onAIError(const QString& error) {
+    statusBar()->showMessage("Erreur IA: " + error, 5000);
+    if (chatWidget) {
+        chatWidget->addErrorMessage(error);
+    }
+}
+
+void MainWindow::toggleChatWidget() {
+    if (!chatWidget) return;
+
+    if (chatWidget->isVisible()) {
+        chatWidget->hide();
+    }
+    else {
+        chatWidget->show();
+    }
+}
+
+void MainWindow::onCodeInsertRequested(const QString& code) {
+    QPlainTextEdit* editor = getCurrentTextEdit();
+    if (editor) {
+        editor->insertPlainText("\n" + code + "\n");
+        statusBar()->showMessage("✓ Code inséré", 2000);
+    }
+}
+
+void MainWindow::onCodeCopyRequested(const QString& code) {
+    Q_UNUSED(code);
+    statusBar()->showMessage("✓ Code copié", 2000);
+}
+
 bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::Resize ||
@@ -1036,10 +1092,6 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
         event->type() == QEvent::MouseButtonRelease ||
         event->type() == QEvent::KeyRelease) {
         QPlainTextEdit* te = qobject_cast<QPlainTextEdit*>(obj ? obj->parent() : nullptr);
-        if (te) {
-            updateAiButtonForTextEdit(te);
-            updateAiDockSelectionFromTextEdit(te);
-        }
     }
     return QMainWindow::eventFilter(obj, event);
 }
