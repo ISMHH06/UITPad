@@ -11,11 +11,12 @@
 #include "Document.h"
 #include "SpellChecker.h"
 #include "Settings.h"
+#include "AIAssistant.h"
+#include "AISettingsDialog.h"
+#include "IAChatWidget.h"
 
-class AIAssistant;
 class QToolButton;
 class QEvent;
-class AIAssistantDock;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -58,19 +59,32 @@ private slots:
     void onStopExecution();
     void onCompilerSettings();
 
+    // AI slots (NEW from teammate)
+    void onExplainCode();
+    void onCompleteCode();
+    void onGenerateFromComment();
+    void onAISettings();
+    void onAIError(const QString &error);
+    void toggleChatWidget();
+    void onCodeInsertRequested(const QString &code);
+    void onCodeCopyRequested(const QString &code);
+
 private:
     QTabWidget* tabWidget;
     TextEditor* textEditor;
     SpellChecker* spellChecker;
-    AIAssistant* aiAssistant = nullptr;
-    AIAssistantDock* aiDock = nullptr;
     CompilerManager* compilerManager;
     OutputWindow* outputWindow;
+    
+    // AI components (NEW from teammate)
+    AIAssistant* aiAssistant = nullptr;
+    AISettingsDialog* aiSettingsDialog = nullptr;
+    IAChatWidget* chatWidget = nullptr;
 
     // Variables d'état
-    bool isSyntaxHighlightingEnabled = true;  // Activé par défaut
-    bool isSpellCheckEnabled = true;           // Activé par défaut
-    Settings::AppTheme currentTheme = Settings::System;  // NOUVEAU : Stocker le thème actuel
+    bool isSyntaxHighlightingEnabled = true;
+    bool isSpellCheckEnabled = true;
+    Settings::AppTheme currentTheme = Settings::System;
 
     // Méthodes internes
     void updateTabTitle(Document* doc);
@@ -83,22 +97,12 @@ private:
     void applyHybridHighlighter(QPlainTextEdit* textEdit);
     void updateHighlighterSettings(QPlainTextEdit* textEdit);
     HybridHighlighter* getHighlighterForTextEdit(QPlainTextEdit* textEdit) const;
-
-    // NOUVEAU : Vérifier si c'est un fichier code (extension .cpp/.h/etc)
     bool isCodeFile(Document* doc) const;
 
-    // NOUVEAU : Gestion des thèmes
+    // Gestion des thèmes
     void applyThemeToApplication(Settings::AppTheme theme);
     void applyThemeToTextEdit(QPlainTextEdit* textEdit, Settings::AppTheme theme);
     void applySystemTheme();
-
-    // AI assistant UI
-    void setupAiForTextEdit(QPlainTextEdit* textEdit);
-    void updateAiButtonForTextEdit(QPlainTextEdit* textEdit);
-    QToolButton* ensureAiButton(QPlainTextEdit* textEdit);
-    AIAssistantDock* ensureAiDock();
-    void openAiDockForTextEdit(QPlainTextEdit* textEdit);
-    void updateAiDockSelectionFromTextEdit(QPlainTextEdit* textEdit);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;

@@ -1,31 +1,45 @@
-#pragma once
+#ifndef AIASSISTANT_H
+#define AIASSISTANT_H
 
 #include <QObject>
 #include <QNetworkAccessManager>
-#include <QString>
-
-class QNetworkReply;
+#include <QNetworkReply>
+#include <QSettings>
 
 class AIAssistant : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit AIAssistant(QObject* parent = nullptr);
+    explicit AIAssistant(QObject *parent = nullptr);
+    ~AIAssistant();
 
-    void askDeepSeek(
-        const QString& apiKey,
-        const QString& question,
-        const QString& selectedText,
-        const QString& model = "deepseek-chat"
-    );
+
+    void setApiKey(const QString &apiKey);
+    QString getApiKey() const { return apiKey; }
+    bool isConfigured() const { return !apiKey.isEmpty(); }
+
+    // Fonctions principales
+    void askQuestion(const QString &question);
+    void explainCode(const QString &code);
+    void generateCode(const QString &prompt);
+    void completeCode(const QString &context);
 
 signals:
-    void answerReady(const QString& answer);
-    void requestFailed(const QString& errorMessage);
+    void responseReady(const QString &response);
+    void errorOccurred(const QString &error);
+    void statusMessage(const QString &message);
+
+private slots:
+    void onApiResponse(QNetworkReply *reply);
 
 private:
-    QNetworkAccessManager network;
+    void saveSettings();
+    void loadSettings();
 
-    static QString buildUserContent(const QString& question, const QString& selectedText);
+    QNetworkAccessManager *networkManager;
+    QSettings *settings;
+    QString apiKey;
 };
+
+#endif // AIASSISTANT_H

@@ -4,6 +4,9 @@
 #include <QStandardPaths>
 #include <QProcessEnvironment>
 #include <QDebug>
+#include <QTemporaryFile>
+#include <QTextStream>
+#include <QRegularExpression>
 
 #ifdef Q_OS_WIN
 #include <windows.h>  // For CREATE_NEW_CONSOLE
@@ -52,6 +55,17 @@ CompilerManager::~CompilerManager()
     if (runProcess->state() != QProcess::NotRunning) {
         runProcess->kill();
         runProcess->waitForFinished();
+    }
+    
+    // Clean up temporary file
+    cleanupTempFile();
+}
+
+void CompilerManager::cleanupTempFile()
+{
+    if (!tempSourceFile.isEmpty() && QFile::exists(tempSourceFile)) {
+        QFile::remove(tempSourceFile);
+        tempSourceFile.clear();
     }
 }
 
@@ -244,6 +258,177 @@ QStringList CompilerManager::buildCompileCommand(const QString& sourceFile, cons
     return args;
 }
 
+// Check if a file has a standard C++ extension
+bool CompilerManager::isStandardCppFile(const QString& filePath) const
+{
+    QString ext = QFileInfo(filePath).suffix().toLower();
+    return ext == "cpp" || ext == "cxx" || ext == "cc" || 
+           ext == "c" || ext == "c++" || ext == "hpp" || ext == "h";
+}
+
+// Detect if a line looks like C++ code
+bool CompilerManager::isCodeLine(const QString& line) const
+{
+    QString trimmed = line.trimmed();
+    
+    // Empty lines are kept (might be part of code formatting)
+    if (trimmed.isEmpty()) {
+        return true;  // Keep empty lines between code
+    }
+    
+    // Preprocessor directives
+    if (trimmed.startsWith("#include") || trimmed.startsWith("#define") ||
+        trimmed.startsWith("#ifdef") || trimmed.startsWith("#ifndef") ||
+        trimmed.startsWith("#endif") || trimmed.startsWith("#pragma") ||
+        trimmed.startsWith("#else") || trimmed.startsWith("#elif") ||
+        trimmed.startsWith("#undef") || trimmed.startsWith("#error")) {
+        return true;
+    }
+    
+    // C++ comments
+    if (trimmed.startsWith("//") || trimmed.startsWith("/*") || 
+        trimmed.startsWith("*") || trimmed.endsWith("*/")) {
+        return true;
+    }
+    
+    // Braces
+    if (trimmed == "{" || trimmed == "}" || trimmed == "};" || 
+        trimmed.endsWith("{") || trimmed.startsWith("}")) {
+        return true;
+    }
+    
+    // Lines ending with semicolon (statements)
+    if (trimmed.endsWith(";")) {
+        return true;
+    }
+    
+    // Function declarations/definitions
+    if (QRegularExpression("^\\w+\\s+\\w+\\s*\\([^)]*\\)\\s*\\{?$").match(trimmed).hasMatch()) {
+        return true;
+    }
+    
+    // Class/struct/enum declarations
+    if (QRegularExpression("^(class|struct|enum|namespace|template|typedef|using)\\s+").match(trimmed).hasMatch()) {
+        return true;
+    }
+    
+    // Control flow keywords
+    if (QRegularExpression("^(if|else|while|for|do|switch|case|default|return|break|continue|try|catch|throw)\\b").match(trimmed).hasMatch()) {
+        return true;
+    }
+    
+    // Variable declarations with common types
+    if (QRegularExpression("^(int|float|double|char|bool|void|auto|const|static|unsigned|long|short|signed|string|QString|std::\\w+)\\s+\\w+").match(trimmed).hasMatch()) {
+        return true;
+    }
+    
+    // Access specifiers
+    if (QRegularExpression("^(public|private|protected)\\s*:").match(trimmed).hasMatch()) {
+        return true;
+    }
+    
+    // Contains scope resolution operator
+    if (trimmed.contains("::")) {
+        return true;
+    }
+    
+    // Contains common C++ operators in context
+    if (trimmed.contains("->") || trimmed.contains("<<") || trimmed.contains(">>")) {
+        return true;
+    }
+    
+    // Assignment or comparison
+    if (QRegularExpression("\\w+\\s*[=!<>]=?\\s*").match(trimmed).hasMatch() && 
+        (trimmed.contains("(") || trimmed.contains(";"))) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Extract only code lines from content
+QString CompilerManager::extractCodeFromContent(const QString& content) const
+{
+    QStringList lines = content.split('\n');
+    QStringList codeLines;
+    bool inCodeBlock = false;
+    int consecutiveCodeLines = 0;
+    int consecutiveTextLines = 0;
+    
+    // First pass: identify code regions
+    QList<bool> isCode;
+    for (const QString& line : lines) {
+        isCode.append(isCodeLine(line));
+    }
+    
+    // Second pass: smooth out the detection (isolated text lines within code are probably code)
+    for (int i = 0; i < lines.size(); ++i) {
+        QString trimmed = lines[i].trimmed();
+        
+        // Check context: if surrounded by code lines, treat as code
+        bool prevIsCode = (i > 0) ? isCode[i-1] : false;
+        bool nextIsCode = (i < lines.size() - 1) ? isCode[i+1] : false;
+        
+        if (!isCode[i] && prevIsCode && nextIsCode && !trimmed.isEmpty()) {
+            // Isolated non-code line between code - might be a comment or keep it
+            // Only exclude if it looks clearly like natural language (multiple words, no special chars)
+            if (!trimmed.contains(QRegularExpression("[;{}()\\[\\]<>]")) && 
+                trimmed.split(' ').size() > 3) {
+                // Looks like natural text, skip it
+                continue;
+            }
+        }
+        
+        if (isCode[i] || trimmed.isEmpty()) {
+            codeLines.append(lines[i]);
+        }
+    }
+    
+    // Remove leading empty lines
+    while (!codeLines.isEmpty() && codeLines.first().trimmed().isEmpty()) {
+        codeLines.removeFirst();
+    }
+    
+    // Remove trailing empty lines
+    while (!codeLines.isEmpty() && codeLines.last().trimmed().isEmpty()) {
+        codeLines.removeLast();
+    }
+    
+    return codeLines.join('\n');
+}
+
+// Create a temporary .cpp file with extracted code
+QString CompilerManager::createTempSourceFile(const QString& originalFile, const QString& content)
+{
+    // Clean up any previous temp file
+    cleanupTempFile();
+    
+    QFileInfo fileInfo(originalFile);
+    QString tempDir = fileInfo.absolutePath();
+    QString baseName = fileInfo.completeBaseName();
+    
+    // Create temp file path
+    tempSourceFile = QDir(tempDir).filePath(baseName + "_temp.cpp");
+    
+    // Extract code from content
+    QString codeContent = extractCodeFromContent(content);
+    
+    // Write to temp file
+    QFile file(tempSourceFile);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << codeContent;
+        file.close();
+        
+        emit compilationOutput(">> Extracted code to temporary file: " + tempSourceFile + "\n");
+        emit compilationOutput(">> ----------------------------------------\n");
+        
+        return tempSourceFile;
+    }
+    
+    return QString();
+}
+
 void CompilerManager::compileFile(const QString& sourceFile, const QString& outputFile)
 {
     if (!compilerAvailable) {
@@ -257,8 +442,35 @@ void CompilerManager::compileFile(const QString& sourceFile, const QString& outp
         return;
     }
 
+    QString fileToCompile = sourceFile;
     QString output = outputFile.isEmpty() ? generateOutputFileName(sourceFile) : outputFile;
-    QStringList args = buildCompileCommand(sourceFile, output);
+    
+    // If not a standard C++ file, extract code and create temp file
+    if (!isStandardCppFile(sourceFile)) {
+        // Read the original file content
+        QFile file(sourceFile);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString content = QTextStream(&file).readAll();
+            file.close();
+            
+            QString tempFile = createTempSourceFile(sourceFile, content);
+            if (!tempFile.isEmpty()) {
+                fileToCompile = tempFile;
+                // Update output to use original file's base name
+                output = generateOutputFileName(sourceFile);
+            } else {
+                emit compilationError("Failed to create temporary source file.");
+                emit compilationFinished(false, -1);
+                return;
+            }
+        } else {
+            emit compilationError("Failed to read source file: " + sourceFile);
+            emit compilationFinished(false, -1);
+            return;
+        }
+    }
+    
+    QStringList args = buildCompileCommand(fileToCompile, output);
     
     compiling = true;
     emit compilationStarted(sourceFile);
@@ -353,6 +565,9 @@ void CompilerManager::onCompileProcessFinished(int exitCode, QProcess::ExitStatu
     } else {
         emit compilationOutput("\n>> Compilation failed with exit code " + QString::number(exitCode) + "\n");
     }
+    
+    // Clean up temp file after compilation
+    cleanupTempFile();
     
     emit compilationFinished(success, exitCode);
     
