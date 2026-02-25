@@ -1,4 +1,5 @@
 #include "IAChatWidget.h"
+#include "ThemeManager.h"
 #include <QScrollBar>
 #include <QTimer>
 #include <QDebug>
@@ -21,6 +22,7 @@ IAChatWidget::IAChatWidget(AIAssistant *assistant, QWidget *parent)
 
 void IAChatWidget::setupUI() {
     mainWidget = new QWidget();
+    mainWidget->setObjectName("chatMainWidget");
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
     mainLayout->setContentsMargins(5, 5, 5, 5);
     mainLayout->setSpacing(5);
@@ -32,6 +34,7 @@ void IAChatWidget::setupUI() {
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     messagesContainer = new QWidget();
+    messagesContainer->setObjectName("chatContainer");
     messagesLayout = new QVBoxLayout(messagesContainer);
     messagesLayout->setContentsMargins(10, 10, 10, 10);
     messagesLayout->setSpacing(15); // Plus d'espace entre les messages
@@ -75,71 +78,8 @@ void IAChatWidget::setupUI() {
 }
 
 void IAChatWidget::setupStyle() {
-    // Style global du dock widget
-    setStyleSheet(R"(
-        QDockWidget {
-            background: #709CA7;  //original #f8f9fa
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-        }
-
-        QDockWidget::title {
-            background: linear-gradient(to right, #667eea, #764ba2);
-            color: white;
-            padding: 8px 15px;
-            font-weight: bold;
-            font-size: 13px;
-            border-radius: 6px 6px 0 0;
-        }
-
-        QScrollArea {
-            background: #ffffff;
-            border: none;
-            border-radius: 6px;
-        }
-
-        QLineEdit {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 13px;
-            selection-background-color: #667eea;
-        }
-
-        QLineEdit:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        QPushButton {
-            background: linear-gradient(to right, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 20px;
-            font-weight: 600;
-            font-size: 13px;
-            min-width: 80px;
-        }
-
-        QPushButton:hover {
-            background: linear-gradient(to right, #5a6fd8, #6a4190);
-        }
-
-        QPushButton:pressed {
-            background: linear-gradient(to right, #4a5fc7, #5a3380);
-        }
-
-        QPushButton#clearBtn {
-            background: #a0aec0;
-        }
-
-        QPushButton#clearBtn:hover {
-            background: #90a0b0;
-        }
-    )");
-
+    // Use ThemeManager for consistent initial style
+    setStyleSheet(ThemeManager::getChatWidgetStyleSheet(currentTheme));
     clearButton->setObjectName("clearBtn");
 }
 
@@ -326,14 +266,209 @@ void IAChatWidget::addCodeMessage(const QString &code) {
     layout->setContentsMargins(0, 5, 0, 5);
     layout->setSpacing(8);
 
-    // Conteneur du code avec style moderne
+    // Conteneur du code avec style moderne - theme dependent
     QWidget *codeContainer = new QWidget();
-    codeContainer->setStyleSheet(R"(
-        background: #1a202c;
-        border: 1px solid #2d3748;
+
+    QString codeContainerStyle;
+    QString headerLabelStyle;
+    QString codeLabelStyle;
+    QString codeDisplayStyle;
+    QString btnStyle;
+    QString btnSuccessStyle;
+
+  if (currentTheme == Settings::Light) {
+        codeContainerStyle = R"(
+    background: #F5F5F5;
+       border: 1px solid #D4D4D4;
+            border-radius: 12px;
+   padding: 15px;
+        )";
+        headerLabelStyle = R"(
+    background: #4078F2;
+     color: #FFFFFF;
+      font-weight: bold;
+            padding: 3px 12px;
+   border-radius: 10px;
+    font-size: 10px;
+            letter-spacing: 0.5px;
+        )";
+      codeLabelStyle = "color: #696C77; font-size: 11px; font-weight: 600;";
+        codeDisplayStyle = R"(
+   background: transparent;
+         color: #383A42;
+            border: none;
+            font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+            padding: 0;
+selection-background-color: #B4D5FE;
+     )";
+        btnStyle = R"(
+  QPushButton {
+         background: rgba(0, 0, 0, 0.05);
+       color: #383A42;
+   border: 1px solid #D4D4D4;
+ border-radius: 6px;
+        padding: 6px 12px;
+                font-weight: 500;
+        font-size: 11px;
+     margin-right: 8px;
+            }
+     QPushButton:hover {
+          background: rgba(0, 0, 0, 0.1);
+                border-color: #4078F2;
+            }
+   QPushButton:pressed {
+           background: rgba(0, 0, 0, 0.15);
+          }
+        )";
+    btnSuccessStyle = R"(
+       QPushButton {
+        background: rgba(0, 0, 0, 0.05);
+                color: #50A14F;
+            border: 1px solid #50A14F;
+      border-radius: 6px;
+        padding: 6px 12px;
+                font-weight: 500;
+   font-size: 11px;
+         margin-right: 8px;
+       }
+         QPushButton:hover {
+    background: rgba(0, 0, 0, 0.1);
+      border-color: #50A14F;
+ }
+            QPushButton:pressed {
+                background: rgba(0, 0, 0, 0.15);
+       }
+ )";
+    } else if (currentTheme == Settings::Hacker) {
+codeContainerStyle = R"(
+       background: #0D1117;
+            border: 1px solid #1B3A1B;
         border-radius: 12px;
+            padding: 15px;
+        )";
+        headerLabelStyle = R"(
+            background: #39D353;
+  color: #0D1117;
+            font-weight: bold;
+   padding: 3px 12px;
+            border-radius: 10px;
+            font-size: 10px;
+          letter-spacing: 0.5px;
+      )";
+      codeLabelStyle = "color: #1A8C1A; font-size: 11px; font-weight: 600;";
+  codeDisplayStyle = R"(
+            background: transparent;
+            color: #33FF33;
+      border: none;
+     font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+            padding: 0;
+  selection-background-color: #1B3A1B;
+      )";
+        btnStyle = R"(
+ QPushButton {
+                background: rgba(0, 255, 0, 0.05);
+       color: #33FF33;
+    border: 1px solid #1B3A1B;
+    border-radius: 6px;
+    padding: 6px 12px;
+      font-weight: 500;
+        font-size: 11px;
+         margin-right: 8px;
+            }
+  QPushButton:hover {
+    background: rgba(0, 255, 0, 0.1);
+         border-color: #39D353;
+          }
+            QPushButton:pressed {
+      background: rgba(0, 255, 0, 0.15);
+          }
+      )";
+        btnSuccessStyle = R"(
+      QPushButton {
+   background: rgba(0, 255, 0, 0.05);
+         color: #39D353;
+  border: 1px solid #39D353;
+    border-radius: 6px;
+                padding: 6px 12px;
+          font-weight: 500;
+           font-size: 11px;
+    margin-right: 8px;
+            }
+            QPushButton:hover {
+       background: rgba(0, 255, 0, 0.1);
+                border-color: #39D353;
+            }
+        QPushButton:pressed {
+   background: rgba(0, 255, 0, 0.15);
+  }
+     )";
+    } else {
+        // Dark theme (default)
+        codeContainerStyle = R"(
+            background: #1a202c;
+     border: 1px solid #2d3748;
+            border-radius: 12px;
         padding: 15px;
-    )");
+  )";
+        headerLabelStyle = R"(
+     background: #4fd1c7;
+     color: #1a202c;
+  font-weight: bold;
+        padding: 3px 12px;
+            border-radius: 10px;
+    font-size: 10px;
+      letter-spacing: 0.5px;
+      )";
+        codeLabelStyle = "color: #a0aec0; font-size: 11px; font-weight: 600;";
+  codeDisplayStyle = R"(
+        background: transparent;
+            color: #e2e8f0;
+      border: none;
+   font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+            padding: 0;
+        selection-background-color: #4a5568;
+   )";
+        btnStyle = R"(
+       QPushButton {
+       background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e0;
+     border: 1px solid #4a5568;
+                border-radius: 6px;
+         padding: 6px 12px;
+         font-weight: 500;
+          font-size: 11px;
+    margin-right: 8px;
+  }
+            QPushButton:hover {
+         background: rgba(255, 255, 255, 0.15);
+       border-color: #667eea;
+         }
+            QPushButton:pressed {
+    background: rgba(255, 255, 255, 0.2);
+ }
+    )";
+        btnSuccessStyle = R"(
+         QPushButton {
+  background: rgba(255, 255, 255, 0.1);
+  color: #48bb78;
+         border: 1px solid #48bb78;
+          border-radius: 6px;
+      padding: 6px 12px;
+   font-weight: 500;
+          font-size: 11px;
+  margin-right: 8px;
+      }
+            QPushButton:hover {
+           background: rgba(255, 255, 255, 0.15);
+    border-color: #48bb78;
+        }
+  QPushButton:pressed {
+        background: rgba(255, 255, 255, 0.2);
+   }
+        )";
+    }
+
+    codeContainer->setStyleSheet(codeContainerStyle);
 
     QVBoxLayout *containerLayout = new QVBoxLayout(codeContainer);
     containerLayout->setContentsMargins(0, 0, 0, 0);
@@ -341,41 +476,26 @@ void IAChatWidget::addCodeMessage(const QString &code) {
 
     // En-tête du bloc de code
     QWidget *headerWidget = new QWidget();
-    QHBoxLayout *headerLayout = new QHBoxLayout(headerWidget);
+  QHBoxLayout *headerLayout = new QHBoxLayout(headerWidget);
     headerLayout->setContentsMargins(0, 0, 0, 0);
 
     QLabel *langLabel = new QLabel("C++");
-    langLabel->setStyleSheet(R"(
-        background: #4fd1c7;
-        color: #1a202c;
-        font-weight: bold;
-        padding: 3px 12px;
-        border-radius: 10px;
-        font-size: 10px;
-        letter-spacing: 0.5px;
-    )");
+  langLabel->setStyleSheet(headerLabelStyle);
 
     QLabel *codeLabel = new QLabel("Code généré");
-    codeLabel->setStyleSheet("color: #a0aec0; font-size: 11px; font-weight: 600;");
+    codeLabel->setStyleSheet(codeLabelStyle);
 
     headerLayout->addWidget(langLabel);
     headerLayout->addWidget(codeLabel);
-    headerLayout->addStretch();
+headerLayout->addStretch();
 
     // Zone de code
     QTextEdit *codeDisplay = new QTextEdit();
     codeDisplay->setPlainText(code);
     codeDisplay->setReadOnly(true);
     codeDisplay->setFont(QFont("Consolas", 10));
-    codeDisplay->setLineWrapMode(QTextEdit::NoWrap);
-    codeDisplay->setStyleSheet(R"(
-        background: transparent;
-        color: #e2e8f0;
-        border: none;
-        font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
-        padding: 0;
-        selection-background-color: #4a5568;
-    )");
+ codeDisplay->setLineWrapMode(QTextEdit::NoWrap);
+    codeDisplay->setStyleSheet(codeDisplayStyle);
 
     // Ajuster la hauteur
     int lineCount = code.count('\n') + 1;
@@ -386,7 +506,7 @@ void IAChatWidget::addCodeMessage(const QString &code) {
     QFontMetrics metrics(codeDisplay->font());
     codeDisplay->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
 
-    // Barre d'outils pour les actions
+ // Barre d'outils pour les actions
     QWidget *toolbarWidget = new QWidget();
     QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
     toolbarLayout->setContentsMargins(0, 5, 0, 0);
@@ -394,48 +514,7 @@ void IAChatWidget::addCodeMessage(const QString &code) {
     QPushButton *copyBtn = new QPushButton("📋 Copier");
     QPushButton *insertBtn = new QPushButton("📝 Insérer");
 
-    // Définir le style des boutons une fois pour toutes
-    const QString btnStyle = R"(
-        QPushButton {
-            background: rgba(255, 255, 255, 0.1);
-            color: #cbd5e0;
-            border: 1px solid #4a5568;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-weight: 500;
-            font-size: 11px;
-            margin-right: 8px;
-        }
-        QPushButton:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #667eea;
-        }
-        QPushButton:pressed {
-            background: rgba(255, 255, 255, 0.2);
-        }
-    )";
-
-    const QString btnSuccessStyle = R"(
-        QPushButton {
-            background: rgba(255, 255, 255, 0.1);
-            color: #48bb78;
-            border: 1px solid #48bb78;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-weight: 500;
-            font-size: 11px;
-            margin-right: 8px;
-        }
-        QPushButton:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #48bb78;
-        }
-        QPushButton:pressed {
-            background: rgba(255, 255, 255, 0.2);
-        }
-    )";
-
-    copyBtn->setStyleSheet(btnStyle);
+ copyBtn->setStyleSheet(btnStyle);
     insertBtn->setStyleSheet(btnStyle);
 
     toolbarLayout->addWidget(copyBtn);
@@ -448,18 +527,18 @@ void IAChatWidget::addCodeMessage(const QString &code) {
 
     layout->addWidget(codeContainer);
 
-    // Connexions des boutons - CORRIGÉ : Capture de toutes les variables nécessaires
+    // Connexions des boutons
     connect(copyBtn, &QPushButton::clicked, this, [this, copyBtn, code, btnStyle, btnSuccessStyle]() {
         QApplication::clipboard()->setText(code);
         copyBtn->setText("✓ Copié !");
-        copyBtn->setStyleSheet(btnSuccessStyle);
+  copyBtn->setStyleSheet(btnSuccessStyle);
 
         QTimer::singleShot(1500, copyBtn, [copyBtn, btnStyle]() {
-            if (copyBtn) {
-                copyBtn->setText("📋 Copier");
-                copyBtn->setStyleSheet(btnStyle);
-            }
-        });
+      if (copyBtn) {
+         copyBtn->setText("📋 Copier");
+   copyBtn->setStyleSheet(btnStyle);
+  }
+ });
 
         emit codeCopyRequested(code);
     });
@@ -470,10 +549,10 @@ void IAChatWidget::addCodeMessage(const QString &code) {
 
         QTimer::singleShot(1500, insertBtn, [insertBtn, btnStyle]() {
             if (insertBtn) {
-                insertBtn->setText("📝 Insérer");
-                insertBtn->setStyleSheet(btnStyle);
-            }
-        });
+ insertBtn->setText("📝 Insérer");
+     insertBtn->setStyleSheet(btnStyle);
+      }
+   });
 
         emit codeInsertRequested(code);
     });
@@ -491,12 +570,12 @@ void IAChatWidget::addCodeMessage(const QString &code) {
     avatar->setFixedSize(36, 36);
     avatar->setAlignment(Qt::AlignCenter);
     avatar->setStyleSheet(
-        "background: #48bb78;"
-        "color: white;"
+   "background: #48bb78;"
+  "color: white;"
         "border-radius: 18px;"
-        "font-size: 16px;"
-        "font-weight: bold;"
-        "margin-right: 5px;"
+     "font-size: 16px;"
+      "font-weight: bold;"
+    "margin-right: 5px;"
         );
 
     messageLayout->addWidget(avatar);
@@ -610,148 +689,10 @@ void IAChatWidget::refreshMessages()
 void IAChatWidget::applyTheme(Settings::AppTheme theme)
 {
     currentTheme = theme;
-    QString style;
     
-    if (theme == Settings::Dark) {
-        style = R"(
-            QDockWidget {
-                background: #252526;
-                border: 1px solid #3E3E42;
-            }
-            QDockWidget::title {
-                background: #2D2D30;
-                color: #D4D4D4;
-                padding: 8px 15px;
-                font-weight: bold;
-            }
-            QScrollArea {
-                background: #1E1E1E;
-                border: none;
-            }
-            QWidget {
-                background: #1E1E1E;
-            }
-            QLineEdit {
-                background: #3C3C3C;
-                color: #D4D4D4;
-                border: 2px solid #3E3E42;
-                border-radius: 20px;
-                padding: 8px 15px;
-            }
-            QLineEdit:focus {
-                border-color: #007ACC;
-            }
-            QPushButton {
-                background: #007ACC;
-                color: white;
-                border: none;
-                border-radius: 20px;
-                padding: 8px 20px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background: #1E90FF;
-            }
-            QPushButton#clearBtn {
-                background: #4A4A4A;
-            }
-            QPushButton#clearBtn:hover {
-                background: #5A5A5A;
-            }
-        )";
-    }
-    else if (theme == Settings::Hacker) {
-        style = R"(
-            QDockWidget {
-                background: #000000;
-                border: 1px solid #00FF00;
-            }
-            QDockWidget::title {
-                background: #001100;
-                color: #00FF00;
-                padding: 8px 15px;
-                font-weight: bold;
-                font-family: 'Courier New', monospace;
-            }
-            QScrollArea {
-                background: #000000;
-                border: none;
-            }
-            QWidget {
-                background: #000000;
-            }
-            QLineEdit {
-                background: #001100;
-                color: #00FF00;
-                border: 2px solid #00FF00;
-                border-radius: 20px;
-                padding: 8px 15px;
-                font-family: 'Courier New', monospace;
-            }
-            QPushButton {
-                background: #003300;
-                color: #00FF00;
-                border: 1px solid #00FF00;
-                border-radius: 20px;
-                padding: 8px 20px;
-                font-weight: 600;
-                font-family: 'Courier New', monospace;
-            }
-            QPushButton:hover {
-                background: #004400;
-            }
-        )";
-    }
-    else {
-        // Light theme - improved visibility with dark text
-        style = R"(
-            QDockWidget {
-                background: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-            }
-            QDockWidget::title {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #667eea, stop:1 #764ba2);
-                color: white;
-                padding: 8px 15px;
-                font-weight: bold;
-            }
-            QScrollArea {
-                background: #F5F5F5;
-                border: none;
-            }
-            QWidget {
-                background: #F5F5F5;
-            }
-            QLineEdit {
-                background: white;
-                color: #1a1a1a;
-                border: 2px solid #CCCCCC;
-                border-radius: 20px;
-                padding: 8px 15px;
-            }
-            QLineEdit:focus {
-                border-color: #667eea;
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #667eea, stop:1 #764ba2);
-                color: white;
-                border: none;
-                bord    er-radius: 20px;
-                padding: 8px 20px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #5a6fd8, stop:1 #6a4190);
-            }
-            QPushButton#clearBtn {
-                background: #a0aec0;
-            }
-        )";
-    }
-    
-    setStyleSheet(style);
+    // Use ThemeManager for consistent styling
+    setStyleSheet(ThemeManager::getChatWidgetStyleSheet(theme));
     
     // Refresh existing messages to apply new theme colors
-    refreshMessages();
+  refreshMessages();
 }

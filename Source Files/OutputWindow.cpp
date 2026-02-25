@@ -1,4 +1,5 @@
 #include "OutputWindow.h"
+#include "ThemeManager.h"
 #include <QVBoxLayout>
 #include <QTextCharFormat>
 #include <QTextCursor>
@@ -6,7 +7,7 @@
 #include <QTextBlock>
 
 OutputWindow::OutputWindow(QWidget* parent)
-    : QDockWidget("Output", parent)
+    : QDockWidget("OUTPUT", parent)
 {
     setupUI();
 }
@@ -16,19 +17,24 @@ void OutputWindow::setupUI()
     QWidget* mainWidget = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(mainWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     tabWidget = new QTabWidget(mainWidget);
+    tabWidget->setDocumentMode(true);
 
     // Compilation output tab
     QWidget* compileTab = new QWidget();
     QVBoxLayout* compileLayout = new QVBoxLayout(compileTab);
-    compileLayout->setContentsMargins(4, 4, 4, 4);
+    compileLayout->setContentsMargins(0, 0, 0, 0);
+    compileLayout->setSpacing(0);
 
     compileOutput = new QPlainTextEdit(compileTab);
     compileOutput->setReadOnly(true);
     compileLayout->addWidget(compileOutput);
 
     QHBoxLayout* compileButtons = new QHBoxLayout();
+    compileButtons->setContentsMargins(4, 4, 4, 4);
+    compileButtons->setSpacing(4);
     btnStopCompile = new QPushButton("Stop", compileTab);
     btnClearCompile = new QPushButton("Clear", compileTab);
     compileButtons->addWidget(btnStopCompile);
@@ -44,13 +50,16 @@ void OutputWindow::setupUI()
     // Run output tab
     QWidget* runTab = new QWidget();
     QVBoxLayout* runLayout = new QVBoxLayout(runTab);
-    runLayout->setContentsMargins(4, 4, 4, 4);
+    runLayout->setContentsMargins(0, 0, 0, 0);
+    runLayout->setSpacing(0);
 
     runOutput = new QPlainTextEdit(runTab);
     runOutput->setReadOnly(true);
     runLayout->addWidget(runOutput);
 
     QHBoxLayout* runButtons = new QHBoxLayout();
+    runButtons->setContentsMargins(4, 4, 4, 4);
+    runButtons->setSpacing(4);
     btnStopRun = new QPushButton("Stop", runTab);
     btnClearRun = new QPushButton("Clear", runTab);
     runButtons->addWidget(btnStopRun);
@@ -69,7 +78,7 @@ void OutputWindow::setupUI()
     mainLayout->addWidget(tabWidget);
     setWidget(mainWidget);
 
-    setMinimumHeight(150);
+    setMinimumHeight(120);
     
     applyTheme(Settings::Dark);
 }
@@ -78,156 +87,15 @@ void OutputWindow::applyTheme(Settings::AppTheme theme)
 {
     currentTheme = theme;
     
-    QString outputStyle;
-    QString widgetStyle;
-    
-    if (theme == Settings::Dark) {
-        outputStyle = R"(
-            QPlainTextEdit {
-                background-color: #1E1E1E;
-                color: #D4D4D4;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
-                border: 1px solid #3E3E42;
-            }
-        )";
-        widgetStyle = R"(
-            QDockWidget {
-                background-color: #252526;
-                color: #D4D4D4;
-            }
-            QDockWidget::title {
-                background-color: #2D2D30;
-                color: #D4D4D4;
-                padding: 6px;
-            }
-            QPushButton {
-                background-color: #2D2D30;
-                color: #D4D4D4;
-                border: 1px solid #3E3E42;
-                padding: 4px 12px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #3E3E42;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3E3E42;
-                background-color: #252526;
-            }
-            QTabBar::tab {
-                background-color: #2D2D30;
-                color: #D4D4D4;
-                padding: 6px 20px;
-                border: 1px solid #3E3E42;
-            }
-            QTabBar::tab:selected {
-                background-color: #1E1E1E;
-                border-bottom: 2px solid #007ACC;
-            }
-        )";
-    }
-    else if (theme == Settings::Hacker) {
-        outputStyle = R"(
-            QPlainTextEdit {
-                background-color: #000000;
-                color: #00FF00;
-                font-family: 'Courier New', monospace;
-                font-size: 10pt;
-                border: 1px solid #00FF00;
-            }
-        )";
-        widgetStyle = R"(
-            QDockWidget {
-                background-color: #000000;
-                color: #00FF00;
-            }
-            QDockWidget::title {
-                background-color: #001100;
-                color: #00FF00;
-                padding: 6px;
-            }
-            QPushButton {
-                background-color: #001100;
-                color: #00FF00;
-                border: 1px solid #00FF00;
-                padding: 4px 12px;
-                border-radius: 3px;
-                font-family: 'Courier New', monospace;
-            }
-            QPushButton:hover {
-                background-color: #003300;
-            }
-            QTabWidget::pane {
-                border: 1px solid #00FF00;
-                background-color: #000000;
-            }
-            QTabBar::tab {
-                background-color: #001100;
-                color: #00FF00;
-                padding: 6px 20px;
-                border: 1px solid #00FF00;
-                font-family: 'Courier New', monospace;
-            }
-            QTabBar::tab:selected {
-                background-color: #000000;
-                border-bottom: 2px solid #00FF00;
-            }
-        )";
-    }
-    else {
-        // Light theme
-        outputStyle = R"(
-            QPlainTextEdit {
-                background-color: #FFFFFF;
-                color: #000000;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
-                border: 1px solid #CCCCCC;
-            }
-        )";
-        widgetStyle = R"(
-            QDockWidget {
-                background-color: #F3F3F3;
-                color: #000000;
-            }
-            QDockWidget::title {
-                background-color: #E0E0E0;
-                color: #000000;
-                padding: 6px;
-            }
-            QPushButton {
-                background-color: #E0E0E0;
-                color: #000000;
-                border: 1px solid #CCCCCC;
-                padding: 4px 12px;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #D0D0D0;
-            }
-            QTabWidget::pane {
-                border: 1px solid #CCCCCC;
-                background-color: #FFFFFF;
-            }
-            QTabBar::tab {
-                background-color: #E0E0E0;
-                color: #000000;
-                padding: 6px 20px;
-                border: 1px solid #CCCCCC;
-            }
-            QTabBar::tab:selected {
-                background-color: #FFFFFF;
-                border-bottom: 2px solid #0078D7;
-            }
-        )";
-    }
+    // Use ThemeManager for consistent styling
+    QString outputStyle = ThemeManager::getOutputTextStyleSheet(theme);
+    QString widgetStyle = ThemeManager::getOutputWindowStyleSheet(theme);
     
     compileOutput->setStyleSheet(outputStyle);
     runOutput->setStyleSheet(outputStyle);
     widget()->setStyleSheet(widgetStyle);
     
-    // IMPORTANT: Refresh existing text colors
+    // Refresh existing text colors
     refreshTextColors(compileOutput);
     refreshTextColors(runOutput);
 }

@@ -44,6 +44,10 @@ set(PROJECT_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/CompilerManager.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/OutputWindow.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/OutputWindow.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/ThemeManager.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/ThemeManager.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source Files/CodeEditorWidget.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Header Files/CodeEditorWidget.h"
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
