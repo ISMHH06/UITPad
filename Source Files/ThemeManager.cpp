@@ -94,7 +94,7 @@ ThemeManager::Colors ThemeManager::lightColors()
     c.editorBg            = "#FAFAFA";
     c.editorFg    = "#383A42";
     c.editorLineHighlight = "#F2F2F2";
-    c.editorSelection     = "#B4D5FE";
+    c.editorSelection     = "#3390FF";
     c.lineNumberBg      = "#FAFAFA";
     c.lineNumberFg     = "#9D9D9F";
     c.lineNumberActiveFg  = "#383A42";
