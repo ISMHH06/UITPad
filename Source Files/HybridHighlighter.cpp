@@ -70,96 +70,200 @@ bool HybridHighlighter::isCodeLine(const QString& text) const {
 
     // Lignes vides ou très courtes = texte normal
     if (trimmed.isEmpty() || trimmed.length() < 2) {
-        return false;
+ return false;
     }
 
     int codeScore = 0;
 
-    // 1. Directives préprocesseur (très fort indicateur)
+  // ── Immediate certainties (return true) ────────────────────
+
+    // 1. Directives préprocesseur
     if (trimmed.startsWith("#include") || trimmed.startsWith("#define") ||
-        trimmed.startsWith("#ifdef") || trimmed.startsWith("#ifndef") ||
-        trimmed.startsWith("#pragma")) {
-        return true;
+     trimmed.startsWith("#ifdef") || trimmed.startsWith("#ifndef") ||
+        trimmed.startsWith("#pragma") || trimmed.startsWith("#endif") ||
+        trimmed.startsWith("#else") || trimmed.startsWith("#undef")) {
+      return true;
     }
 
-    // 2. Commentaires C++ (indicateur fort)
+    // 2. Commentaires C++
     if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*")) {
-        return true;  // Changé de +3 à certitude
+     return true;
     }
 
-    // 3. Déclarations de fonctions/classes
-    if (QRegularExpression("^(class|struct|enum|namespace|template)\\s+\\w+").match(trimmed).hasMatch()) {
+    // 3. Déclarations de fonctions/classes/using
+    if (QRegularExpression("^(class|struct|enum|namespace|using)\\s+\\w+").match(trimmed).hasMatch() ||
+        QRegularExpression("^template\\s*<").match(trimmed).hasMatch()) {
         return true;
     }
 
     // 4. Access specifiers (public:, private:, protected:)
     if (QRegularExpression("^(public|private|protected)\\s*:").match(trimmed).hasMatch()) {
-        return true;
+   return true;
     }
 
-    // 5. NOUVEAU : Accolades seules ou avec contenu minimal (très fort indicateur)
+    // 5. Accolades seules ou lignes terminant/commençant par accolades
     if (trimmed == "{" || trimmed == "}" || trimmed == "};" ||
         trimmed.endsWith("{") || trimmed.startsWith("}")) {
-        return true;
+      return true;
     }
 
-    // 6. NOUVEAU : Lignes avec scope resolution (::)
+    // 6. Scope resolution (::)
     if (trimmed.contains("::")) {
+    return true;
+    }
+
+    // 7. Stream operators (<< or >>) — very strong C++ indicator
+    if (trimmed.contains("<<") || trimmed.contains(">>")) {
         return true;
     }
 
-    // 7. NOUVEAU : Instructions se terminant par ; (très commun en C++)
+    // 8. Appel de méthode : object.method()
+    if (trimmed.contains(QRegularExpression("\\w+\\.\\w+\\s*\\("))) {
+        return true;
+}
+
+    // 9. Pointeur arrow (->)
+    if (trimmed.contains("->")) {
+        return true;
+    }
+
+    // 10. Constructor initializer list pattern:  ) : member(val)
+    if (trimmed.contains(QRegularExpression("\\)\\s*:\\s*\\w+\\s*\\("))) {
+     return true;
+    }
+
+    // ── Scoring-based detection ─────────────────────────────────
+
+    // 11. Instructions se terminant par ;
     if (trimmed.endsWith(";") && trimmed.length() > 3) {
         codeScore += 3;
     }
 
-    // 8. Syntaxe typique : fonction()
-    if (trimmed.contains(QRegularExpression("\\w+\\s*\\([^)]*\\)\\s*[{;]"))) {
-        codeScore += 3;
+    // 12. Syntaxe typique : fonction() { ou fonction();
+    if (trimmed.contains(QRegularExpression("\\w+\\s*\\([^)]*\\)\\s*[{;]?"))) {
+        // Only count if there are parentheses with content that looks like code
+        if (trimmed.contains("(") && trimmed.contains(")")) {
+        codeScore += 2;
+    }
     }
 
-    // 9. Appel de méthode : object.method()
-    if (trimmed.contains(QRegularExpression("\\w+\\.\\w+\\s*\\("))) {
-        return true;
-    }
-
-    // 10. Instructions de contrôle
-    QStringList controlKeywords = { "if", "else", "while", "for", "do", "switch",
-                                    "case", "return", "break", "continue" };
-    for (const QString& kw : controlKeywords) {
-        if (QRegularExpression("\\b" + kw + "\\b").match(trimmed).hasMatch()) {
-            codeScore += 3;
-            break;  // Un seul suffit
-        }
-    }
-
-    // 11. Déclarations de variables typiques
-    QStringList dataTypes = { "int", "float", "double", "char", "bool", "void",
-                             "string", "auto", "const", "static", "unsigned",
-                             "long", "short" };
-    for (const QString& type : dataTypes) {
-        if (QRegularExpression("\\b" + type + "\\s+\\w+").match(trimmed).hasMatch()) {
-            codeScore += 3;
-            break;
-        }
-    }
-
-    // 12. Déclarations avec types personnalisés (majuscule au début)
-    if (QRegularExpression("^[A-Z]\\w+\\s+\\w+").match(trimmed).hasMatch()) {
+    // 13. Increment/decrement operators (++ or --)
+    if (trimmed.contains(QRegularExpression("\\w+\\s*\\+\\+")) ||
+        trimmed.contains(QRegularExpression("\\+\\+\\s*\\w+")) ||
+        trimmed.contains(QRegularExpression("\\w+\\s*--")) ||
+   trimmed.contains(QRegularExpression("--\\s*\\w+"))) {
         codeScore += 2;
     }
 
-    // 13. Opérateurs d'affectation
-    if (trimmed.contains(QRegularExpression("\\w+\\s*[=+\\-*/]?=\\s*"))) {
-        codeScore += 1;
+    // 14. Control keywords in code context (followed by '(' or '{' or ';')
+    QStringList controlKeywords = { "if", "else", "while", "for", "do", "switch",
+           "case", "return", "break", "continue", "default" };
+    for (const QString& kw : controlKeywords) {
+        // keyword followed by ( or { or ;
+        QRegularExpression contextualKw("\\b" + kw + "\\b\\s*[({;]");
+   if (contextualKw.match(trimmed).hasMatch()) {
+     codeScore += 3;
+            break;
+        }
+        // "return <value>;" pattern
+        if (kw == "return" && QRegularExpression("\\breturn\\b\\s+.+;$").match(trimmed).hasMatch()) {
+      codeScore += 3;
+      break;
+        }
+        // "else {" or "else if"
+        if (kw == "else" && QRegularExpression("\\belse\\b\\s*[{i]").match(trimmed).hasMatch()) {
+            codeScore += 3;
+     break;
+        }
+        // "break;" or "continue;" standalone
+        if ((kw == "break" || kw == "continue") &&
+      QRegularExpression("^\\s*" + kw + "\\s*;").match(text).hasMatch()) {
+            codeScore += 3;
+    break;
+        }
+        // "case <value>:" or "default:"
+    if (kw == "case" && QRegularExpression("\\bcase\\b\\s+.+:").match(trimmed).hasMatch()) {
+        codeScore += 3;
+       break;
+        }
+        if (kw == "default" && QRegularExpression("^\\s*default\\s*:").match(trimmed).hasMatch()) {
+   codeScore += 3;
+  break;
+        }
     }
 
-    // 14. Pointeur ou flèche
-    if (trimmed.contains("->") || trimmed.contains("&") || trimmed.contains("*")) {
-        codeScore += 1;
+    // 15. Déclarations de variables (type followed by identifier)
+    QStringList dataTypes = { "int", "float", "double", "char", "bool", "void",
+              "string", "auto", "const", "static", "unsigned",
+ "long", "short", "size_t", "nullptr" };
+    for (const QString& type : dataTypes) {
+        if (QRegularExpression("\\b" + type + "\\s+\\w+").match(trimmed).hasMatch()) {
+     codeScore += 3;
+            break;
+    }
     }
 
-    // Si le score est >= 3, c'est probablement du code
+// 16. Custom types (PascalCase followed by identifier or parens)
+ if (QRegularExpression("^[A-Z][a-z]\\w+\\s+\\w+").match(trimmed).hasMatch() ||
+        QRegularExpression("^[A-Z][a-z]\\w+\\s*\\(").match(trimmed).hasMatch() ||
+      QRegularExpression("^~[A-Z]\\w+\\s*\\(").match(trimmed).hasMatch()) {
+   codeScore += 2;
+    }
+
+    // 17. Compound assignment operators (+=, -=, *=, /=, ==, !=)
+if (trimmed.contains(QRegularExpression("\\w+\\s*([+\\-*/]=|==|!=)\\s*"))) {
+        codeScore += 2;
+    }
+
+    // 18. Array access or template syntax
+    if (trimmed.contains(QRegularExpression("\\w+\\[.*\\]")) ||
+        trimmed.contains(QRegularExpression("\\w+<\\w+>"))) {
+  codeScore += 2;
+    }
+
+    // 19. String or char literals present
+    if (trimmed.contains(QRegularExpression("\"[^\"]*\"")) ||
+trimmed.contains(QRegularExpression("'[^']*'"))) {
+  codeScore += 1;
+    }
+
+    // ── Natural language penalty ──────────────────────────────────
+    // Only apply penalty when score is borderline and line looks like prose
+    QStringList words = trimmed.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    if (words.size() >= 3 && codeScore > 0 && codeScore < 6) {
+    // Count how many words contain code-like punctuation or are code keywords
+        int codeIndicators = 0;
+
+    QSet<QString> allCodeWords;
+        for (const QString& kw : controlKeywords) allCodeWords.insert(kw);
+    for (const QString& dt : dataTypes) allCodeWords.insert(dt);
+
+ for (const QString& w : words) {
+            // Check for code punctuation in the original word (before stripping)
+          if (w.contains("(") || w.contains(")") || w.contains(";") ||
+ w.contains("{") || w.contains("}") || w.contains("::") ||
+    w.contains("<<") || w.contains(">>") || w.contains("++") ||
+       w.contains("--") || w.contains("->") || w.contains("=") ||
+              w.contains("[") || w.contains("]")) {
+    codeIndicators++;
+   continue;
+       }
+       // Check if it's a known code word
+     QString clean = w;
+   clean.remove(QRegularExpression("[^A-Za-z0-9_]"));
+            if (!clean.isEmpty() && allCodeWords.contains(clean.toLower())) {
+                codeIndicators++;
+      }
+     }
+
+        // If very few words have code characteristics, this is likely prose
+        double codeRatio = static_cast<double>(codeIndicators) / words.size();
+        if (codeRatio < 0.25) {
+            codeScore -= 3;  // Strong penalty: almost certainly prose
+      }
+ }
+
+    // Threshold: need a score of at least 3 to be considered code
     return codeScore >= 3;
 }
 
